@@ -78,7 +78,8 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-  errorFunc("$ HardFault\n\r");
+  serviceUartWriteS("$ HardFault\n\r");
+	_Error_Handler(__FILE__, __LINE__);
 }
 
 /**
@@ -88,7 +89,8 @@ void HardFault_Handler(void)
   */
 void MemManage_Handler(void)
 {
-  errorFunc("$ MemManage\n\r");
+  serviceUartWriteS("$ MemManage\n\r");
+	_Error_Handler(__FILE__, __LINE__);
 }
 
 /**
@@ -98,7 +100,8 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
-  errorFunc("$ BusFault\n\r");
+  serviceUartWriteS("$ BusFault\n\r");
+	_Error_Handler(__FILE__, __LINE__);
 }
 
 /**
@@ -108,7 +111,8 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
-  errorFunc("$ UsageFault\n\r"); 
+  serviceUartWriteS("$ UsageFault\n\r"); 
+	_Error_Handler(__FILE__, __LINE__);
 }
 
 /**

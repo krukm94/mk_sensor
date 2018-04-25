@@ -49,7 +49,7 @@ void serviceUartInit(void)
 	{
 		char buf[40];
 		sprintf(buf , "HAL_UART_Init = %d Error, File: service_uart.c, line: 46\r\n" , ret_value);
-		errorFunc(buf);
+		serviceUartWriteS(buf);
 	}
 	
 	__HAL_UART_ENABLE(&service_uart);

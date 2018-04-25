@@ -7,26 +7,7 @@
 
 // VARIABLES
 volatile uint32_t system_cnt;
-
 volatile uint8_t return_value;
-
-
-/**
-  * @brief  errorFunc
-  * @param  Pointer to error massage
- */
-void errorFunc(char *s)
-{
-	char buf_out[50];
-	sprintf(buf_out , "\r\n\r\n###%s system_cnt: %d [ms]" , s , system_cnt);
-	serviceUartWriteS(buf_out);
-	
-	while(1)
-	{
-		ledToggle(1);
-		HAL_Delay(100);
-	}	
-}	
 
 
 /**
@@ -48,8 +29,9 @@ void init(void)
 	sprintf(print_buf , "\n\r### M.KRUK ### \n\r### ->L4<- ### \n\r### Compilation Time: %s\n\r\n\r" , __TIME__);
 	serviceUartWriteS(print_buf);
 	
+	//Init BMI160
+	bmi160Init();
 }
-
 
 /** System Clock Configuration
 */

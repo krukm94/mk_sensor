@@ -6,22 +6,30 @@
 #ifndef __INIT_H_
 #define __INIT_H_
 
+//>>>>>>>>>>>>>> System Lib
 #include "stm32l4xx.h"
-
-#include "stm32l4xx_hal.h"
-
-#include "stm32l4xx_ll_gpio.h"
-
 #include "stdio.h"
 #include <cstdio>
 #include <cmath>
 
+//>>>>>>>>>>>>>> Hal lib
+#include "stm32l4xx_hal.h"
+#include "stm32l4xx_hal_uart.h"
+#include "stm32l4xx_hal_i2c.h"
+#include "stm32l4xx_hal_spi.h"
+
+#include "stm32l4xx_ll_gpio.h"
+
+
+// >>>>>>>>>>>> My lib
 #include "gpio.h"
 #include "service_uart.h"
-#include "adxl.h"
+#include "bmi160.h"
 
 // >>>>>>>>>> NVIC PRIORITETS
 #define SYSTIC_NVIC_PRIOTITY       	0 
+
+#define TIM16_NVIC_PRIORITY					6
 
 // >>>>>>>>>>>>>> PIN DEFINES
 // PORT A
@@ -70,7 +78,7 @@
 #define SWDCLK_PIN									GPIO_PIN_14
 #define SWDCLK_PORT									GPIOA
 
-#define	BMI160_CS										GPIO_PIN_15
+#define	BMI160_CS_PIN								GPIO_PIN_15
 #define BMI160_CS_PORT							GPIOA
 
 // >>>>>>>>>>>>>> PIN DEFINES
@@ -107,13 +115,9 @@
 
 #define USART3_TX_PIN 							GPIO_PIN_10
 #define USART3_TX_PORT 							GPIOB
-#define UART_RX_BL652_PIN 					USART3_TX_PIN		//CROSS
-#define UART_RX_BL652_PORT 					USART3_TX_PORT	//CROSS
 
 #define USART3_RX_PIN 							GPIO_PIN_11
 #define USART3_RX_PORT 							GPIOB	
-#define UART_TX_BL652_PIN						USART3_RX_PIN		//CROSS
-#define UART_TX_BL652_PORT 					USART3_RX_PORT	//CROSS
 
 #define nCH_BQ24_PIN 								GPIO_PIN_12
 #define nCH_BQ24_PORT 							GPIOB
@@ -157,8 +161,8 @@
 #define PWR_MAINTAIN_PIN						GPIO_PIN_9
 #define PWR_MAINTAIN_PORT 					GPIOC
 
-#define SPI3_CLK_PIN								GPIO_PIN_10
-#define SPI3_CLK_PORT 							GPIOC
+#define SPI3_SCK_PIN								GPIO_PIN_10
+#define SPI3_SCK_PORT 							GPIOC
 
 #define SPI3_MISO_PIN								GPIO_PIN_11
 #define SPI3_MISO_PORT 							GPIOC
@@ -166,8 +170,11 @@
 #define SPI3_MOSI_PIN								GPIO_PIN_12
 #define SPI3_MOSI_PORT 							GPIOC
 
-#define INT_MAX_PIN									GPIO_PIN_13
-#define INT_MAX_PORT 								GPIOC
+#define SYS_WKUP_2_PIN							GPIO_PIN_13
+#define SYS_WKUP_2_PORT							GPIOC
+
+#define INT_MAX_PIN									SYS_WKUP_2_PIN			//Map Sys Wakape Pin
+#define INT_MAX_PORT 								SYS_WKUP_2_PORT
 
 #define OSC32_IN_PIN								GPIO_PIN_14
 #define OSC32_IN_PORT 							GPIOC
@@ -175,21 +182,52 @@
 #define OSC32_OUT_PIN								GPIO_PIN_15
 #define OSC32_OUT_PORT 							GPIOC
 
+// >>>>>>>>>>>>>> BMI160 MAP
+#define BMI160_SPI_INSTANCE					SPI3
+
+#define BMI160_INT2_PIN							SYS_WKUP_1_PIN   //Map Sys Wakape Pin
+#define BMI160_INT2_PORT						SYS_WKUP_1_PORT
+
+#define BMI160_INT1_PIN							SYS_WKUP_4_PIN   //Map Sys Wakape Pin
+#define BMI160_INT1_PORT						SYS_WKUP_4_PORT
+
+#define BMI160_MISO_PIN						  SPI3_MISO_PIN
+#define BMI160_MISO_PORT						SPI3_MISO_PORT
+
+#define BMI160_MOSI_PIN							SPI3_MOSI_PIN
+#define BMI160_MOSI_PORT						SPI3_MOSI_PORT
+
+#define BMI160_SCK_PIN							SPI3_SCK_PIN
+#define BMI160_SCK_PORT							SPI3_SCK_PORT
+						
+
+// >>>>>>>>>>>>>> ADXL MAP
+#define ADXL_SPI_INSTANE						SPI3 
+
+#define ADXL_INT1_PIN								SYS_WKUP_1_PIN    //Map Sys Wakape Pin
+#define ADXL_INT1_PORT							SYS_WKUP_1_PORT
+
+#define ADXL_INT2_PIN								SYS_WKUP_4_PIN    //Map Sys Wakape Pin
+#define ADXL_INT2_PORT							SYS_WKUP_4_PORT
+
+// >>>>>>>>>>>>>> BL652 UART MAP
+#define BL652_UART_INSTANCE					USART3
+
+#define UART_RX_BL652_PIN 					USART3_TX_PIN		//CROSS
+#define UART_RX_BL652_PORT 					USART3_TX_PORT	//CROSS
+
+#define UART_TX_BL652_PIN						USART3_RX_PIN		//CROSS
+#define UART_TX_BL652_PORT 					USART3_RX_PORT	//CROSS
+
 // >>>>>>>>>>>>>> INTERFACESS
 
 #define SERVICE_UART_INSTANCE				USART1
-
-#define BL652_UART_INSTANCE					USART3
 
 #define LPUART_EXT_INSTANCE					LPUART1
 
 #define uSD_SPI_INSTANCE						SPI1
 
 #define I2C_EXT_INSTANCE						I2C2
-
-#define BMI160_SPI_INSTANCE					SPI3
-
-#define ADXL_SPI_INSTANE						SPI3 
 
 #define MAX30003_SPI_INSTANCE				SPI3 
 
@@ -206,7 +244,6 @@ void SystemClock_Config(void);
 
 void init(void);
 
-void errorFunc(char *error_massage);
 void _Error_Handler(char * file, int line);
 
 
