@@ -31,6 +31,10 @@ void init(void)
 	
 	//Init BMI160
 	bmi160Init();
+	
+	//Init ADXL355 
+	adxlInit();
+	
 }
 
 /** System Clock Configuration

@@ -1,6 +1,6 @@
 //NAME: 	"adxl.h"
 //AUTHOR:	M.KRUK
-//DATE 	:	XI.2017
+//DATE 	:	IV.2018
 
 #ifndef __bmi160_H_
 #define __bmi160_H_
@@ -8,15 +8,6 @@
 #include "init.h"
 
 // >>>>>>>>> definitions
-#define ADXL_SPI_INSTANCE 	SPI1
-
-#define ADXL_MOSI_PIN				GPIO_PIN_7
-#define ADXL_MISO_PIN				GPIO_PIN_6
-#define ADXL_CS_PIN					GPIO_PIN_4
-#define ADXL_CLK_PIN				GPIO_PIN_1
-
-#define ADXL_PORT 					GPIOA
-
 #define ADXL_CHIP_ID				((uint8_t)0x00)
 
 #define ADXL_X_DATA					((uint8_t)0x08)
@@ -32,9 +23,6 @@
 #define RANGE_4G						((uint8_t)0x02)
 #define RANGE_2G						((uint8_t)0x01)
 
-
-
-
 //Settings
 typedef struct{
 		uint8_t 	acc_buf[9];
@@ -49,7 +37,7 @@ typedef struct{
 
 
 // >>>>>>>>> functions
-void adxlInit(void);
+uint8_t adxlInit(void);
 void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 

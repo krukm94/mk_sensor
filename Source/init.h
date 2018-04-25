@@ -25,6 +25,7 @@
 #include "gpio.h"
 #include "service_uart.h"
 #include "bmi160.h"
+#include "adxl.h"
 
 // >>>>>>>>>> NVIC PRIORITETS
 #define SYSTIC_NVIC_PRIOTITY       	0 
@@ -149,8 +150,8 @@
 #define uSD_CS_PIN									GPIO_PIN_4
 #define uSD_CS_PORT 								GPIOC
 
-#define CS_ADXL_PIN									GPIO_PIN_6
-#define CS_ADXL_PORT 								GPIOC
+#define ADXL_CS_PIN									GPIO_PIN_6
+#define ADXL_CS_PORT 								GPIOC
 
 #define DRDY_ADXL_PIN								GPIO_PIN_7
 #define DRDY_ADXL_PORT 							GPIOC
@@ -202,13 +203,23 @@
 						
 
 // >>>>>>>>>>>>>> ADXL MAP
-#define ADXL_SPI_INSTANE						SPI3 
+#define ADXL_SPI_INSTANCE						SPI3 
 
 #define ADXL_INT1_PIN								SYS_WKUP_1_PIN    //Map Sys Wakape Pin
 #define ADXL_INT1_PORT							SYS_WKUP_1_PORT
 
 #define ADXL_INT2_PIN								SYS_WKUP_4_PIN    //Map Sys Wakape Pin
 #define ADXL_INT2_PORT							SYS_WKUP_4_PORT
+
+#define ADXL_MISO_PIN								SPI3_MISO_PIN
+#define ADXL_MISO_PORT							SPI3_MISO_PORT
+
+#define ADXL_MOSI_PIN								SPI3_MOSI_PIN
+#define ADXL_MOSI_PORT							SPI3_MOSI_PORT
+
+#define ADXL_CLK_PIN								SPI3_SCK_PIN
+#define ADXL_CLK_PORT								SPI3_SCK_PORT
+
 
 // >>>>>>>>>>>>>> BL652 UART MAP
 #define BL652_UART_INSTANCE					USART3
