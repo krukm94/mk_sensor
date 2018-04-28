@@ -1,6 +1,6 @@
 //NAME: 	"adxl.c"
 //AUTHOR:	M.KRUK
-//DATE 	:	XI.2017
+//DATE 	:	IV.2018 
 
 
 #include "adxl.h"
@@ -10,7 +10,7 @@ SPI_HandleTypeDef spi3_ad;
 
 volatile uint8_t spi_read;
 
-volatile acc_axis acc_adxl;	//Acc structure declaration
+volatile acc_axis_adxl acc_adxl;	//Acc structure declaration
 
 #define LSB_8g 							15.25878906				//15.25878906 ug
 #define LSB_4g							7.629394531				//7.629394531 ug

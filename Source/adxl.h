@@ -2,8 +2,8 @@
 //AUTHOR:	M.KRUK
 //DATE 	:	IV.2018
 
-#ifndef __bmi160_H_
-#define __bmi160_H_
+#ifndef __bl652_H_
+#define __bl652_H_
 
 #include "init.h"
 
@@ -33,7 +33,7 @@ typedef struct{
 		float		  Y;
 	  float			Z;	
 		float			acc_g[40];
-} acc_axis;
+} acc_axis_adxl;
 
 
 // >>>>>>>>> functions
@@ -44,5 +44,5 @@ void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z);
 
 
-#endif //__bmi160_H_
+#endif //__bl652_H_
 

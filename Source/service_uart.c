@@ -57,21 +57,11 @@ void serviceUartInit(void)
 }
 
 /**
-  * @brief  Wrtie char on service Uart Tx 
-	* @param  char to send
-  */
-void serviceUartWrite(char data)
-{	
-	while(!(__HAL_USART_GET_FLAG(&service_uart, UART_FLAG_TXE)));	
-	SERVICE_UART_INSTANCE ->TDR = data;
-}
-
-/**
   * @brief  Write string on service Uart Tx
   * @param  Pointer to string
   */
 void serviceUartWriteS(char *s)
 {
-	while(*s) serviceUartWrite(*s++);
+	UartWriteString(&service_uart , s);
 }
 

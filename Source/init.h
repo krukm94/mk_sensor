@@ -1,6 +1,6 @@
 //NAME: 	"init.h"
 //AUTHOR:	M.KRUK
-//DATE 	:	VI.2018
+//DATE 	:	IV.2018
 
 
 #ifndef __INIT_H_
@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <cmath>
 
-//>>>>>>>>>>>>>> Hal lib
+// >>>>>>>>>>>> Hal lib
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_hal_uart.h"
 #include "stm32l4xx_hal_i2c.h"
@@ -20,19 +20,19 @@
 
 #include "stm32l4xx_ll_gpio.h"
 
-
 // >>>>>>>>>>>> My lib
 #include "gpio.h"
 #include "service_uart.h"
 #include "bmi160.h"
 #include "adxl.h"
+#include "uart_mk.h"
 
-// >>>>>>>>>> NVIC PRIORITETS
+// >>>>>>>>>>>> NVIC PRIORITETS
 #define SYSTIC_NVIC_PRIOTITY       	0 
 
 #define TIM16_NVIC_PRIORITY					6
 
-// >>>>>>>>>>>>>> PIN DEFINES
+// >>>>>>>>>>>> PIN DEFINES
 // PORT A
 #define SYS_WKUP_1_PIN							GPIO_PIN_0
 #define SYS_WKUP_1_PORT							GPIOA
@@ -82,7 +82,7 @@
 #define	BMI160_CS_PIN								GPIO_PIN_15
 #define BMI160_CS_PORT							GPIOA
 
-// >>>>>>>>>>>>>> PIN DEFINES
+// >>>>>>>>>>>> PIN DEFINES
 // PORT B
 #define uSD_EN_PIN									GPIO_PIN_0
 #define uSD_EN_PORT									GPIOB
@@ -132,7 +132,7 @@
 #define SPI_CS_EXT1_PIN 						GPIO_PIN_15
 #define SPI_CS_EXT1_PORT 						GPIOB
 
-// >>>>>>>>>>>>>> PIN DEFINES
+// >>>>>>>>>>>> PIN DEFINES
 // PORT C
 
 #define V_AKU_ADC_PIN								GPIO_PIN_0
@@ -183,7 +183,7 @@
 #define OSC32_OUT_PIN								GPIO_PIN_15
 #define OSC32_OUT_PORT 							GPIOC
 
-// >>>>>>>>>>>>>> BMI160 MAP
+// >>>>>>>>>>>> BMI160 MAP
 #define BMI160_SPI_INSTANCE					SPI3
 
 #define BMI160_INT2_PIN							SYS_WKUP_1_PIN   //Map Sys Wakape Pin
@@ -202,7 +202,7 @@
 #define BMI160_SCK_PORT							SPI3_SCK_PORT
 						
 
-// >>>>>>>>>>>>>> ADXL MAP
+// >>>>>>>>>>>> ADXL MAP
 #define ADXL_SPI_INSTANCE						SPI3 
 
 #define ADXL_INT1_PIN								SYS_WKUP_1_PIN    //Map Sys Wakape Pin
@@ -221,7 +221,7 @@
 #define ADXL_CLK_PORT								SPI3_SCK_PORT
 
 
-// >>>>>>>>>>>>>> BL652 UART MAP
+// >>>>>>>>>>>> BL652 UART MAP
 #define BL652_UART_INSTANCE					USART3
 
 #define UART_RX_BL652_PIN 					USART3_TX_PIN		//CROSS
@@ -230,7 +230,7 @@
 #define UART_TX_BL652_PIN						USART3_RX_PIN		//CROSS
 #define UART_TX_BL652_PORT 					USART3_RX_PORT	//CROSS
 
-// >>>>>>>>>>>>>> INTERFACESS
+// >>>>>>>>>>>> INTERFACESS
 
 #define SERVICE_UART_INSTANCE				USART1
 
@@ -249,7 +249,7 @@
 #define V_AKU_INSTANCE							ADC1
 
 
-// >>>>>>>>>>>>>> FUNCTIONS
+// >>>>>>>>>>>> FUNCTIONS
 
 void SystemClock_Config(void);
 
