@@ -7,6 +7,9 @@
 
 UART_HandleTypeDef  bl652_uart;
 
+//Service Uart Structure Pointer
+extern UsartDriver* ServUsart;
+
 /**
   * @brief  BL652 Init
 	* @ret  	Init Status
@@ -51,7 +54,7 @@ uint8_t bl652Init(void){
 	{
 		char buf[40];
 		sprintf(buf , "HAL_UART_Init = %d Error, File: bl652.c, line: 53\r\n" , ret_value);
-		serviceUartWriteS(buf);
+		ServUsart->writeString(ServUsart->usartHandle ,buf);
 		
 		return 1;
 	}

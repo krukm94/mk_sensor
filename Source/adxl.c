@@ -16,6 +16,8 @@ volatile acc_axis_adxl acc_adxl;	//Acc structure declaration
 #define LSB_4g							7.629394531				//7.629394531 ug
 #define LSB_2g							3.814697266				//3.814697266 ug
 
+//Service Uart Structure Pointer
+extern UsartDriver* ServUsart;
 
 /**
   * @brief  Initialization adxl
@@ -82,7 +84,7 @@ uint8_t adxlInit(void)
 	{
 		char buf[50];
 		sprintf(buf , "$$$ ErrorHAL_SPI_Init = %d, file: adxl.c, line:70 \n\r" , ret_value);
-		serviceUartWriteS(buf);
+		ServUsart->writeString(ServUsart->usartHandle ,buf);
 		
 		return 1;
 	}
@@ -94,7 +96,7 @@ uint8_t adxlInit(void)
 	adxlRead(ADXL_CHIP_ID ,&read, 1);
 	if(read != 0xED){
 		sprintf(print , "$$$ Error, ADXL Bad CHIP ID: 0x%0.2X , should be 0xED\n\r" , read);
-		serviceUartWriteS(print);
+		ServUsart->writeString(ServUsart->usartHandle ,print);
 		
 		return 1;
 	}
@@ -102,7 +104,7 @@ uint8_t adxlInit(void)
 		ret_value = 0;
 		
 		sprintf(print , "$$$ ADXL CHIP ID: 0x%0.2X\n\r" , read);
-		serviceUartWriteS(print);
+		ServUsart->writeString(ServUsart->usartHandle ,print);
 	}
 	
 	
@@ -111,7 +113,7 @@ uint8_t adxlInit(void)
  	adxlWrite(ADXL_POWER , &set , 1);									//SET MEASURMENT ON
 	
 	sprintf(print , "$$$ SET: 0x%0.2X \n\r" , set);
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 
 	adxlRead(ADXL_RANGE , &set , 1);
 	set |= RANGE_2G;
@@ -187,7 +189,7 @@ void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
 	
 	sprintf(print_acc, "$$$ %d %d %d\r\n" , acc_adxl.acc_x , acc_adxl.acc_y , acc_adxl.acc_z);
 	
-	serviceUartWriteS(print_acc);
+	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 }
 
 

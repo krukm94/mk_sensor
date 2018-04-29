@@ -8,7 +8,17 @@
 
 #include "init.h"
 
-void UartWrite(UART_HandleTypeDef *uart_handle, char data);
-void UartWriteString(UART_HandleTypeDef *uart_handle, char *s);
+void UsartWriteChar(USART_HandleTypeDef* handle, uint8_t data);
+void UsartWriteString(USART_HandleTypeDef* handle, char *s);
+void InitUsartDrivers(void);
+
+void serviceUartInit(void);
+
+typedef struct{
+
+		USART_HandleTypeDef* usartHandle;
+		void (*writeString)(USART_HandleTypeDef* handle, char* s);
+	
+}UsartDriver;
 
 #endif

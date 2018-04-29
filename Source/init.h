@@ -11,6 +11,7 @@
 #include "stdio.h"
 #include <cstdio>
 #include <cmath>
+#include <stdlib.h>
 
 // >>>>>>>>>>>> Hal lib
 #include "stm32l4xx_hal.h"
@@ -22,7 +23,6 @@
 
 // >>>>>>>>>>>> My lib
 #include "gpio.h"
-#include "service_uart.h"
 #include "bmi160.h"
 #include "adxl.h"
 #include "uart_mk.h"

@@ -55,6 +55,9 @@
 
 extern volatile uint32_t system_cnt;
 
+// Uart Driver Struct
+extern UsartDriver* ServUsart;
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -78,7 +81,7 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
-  serviceUartWriteS("$ HardFault\n\r");
+  ServUsart->writeString(ServUsart->usartHandle ,"$ HardFault\n\r");
 	_Error_Handler(__FILE__, __LINE__);
 }
 
@@ -89,7 +92,7 @@ void HardFault_Handler(void)
   */
 void MemManage_Handler(void)
 {
-  serviceUartWriteS("$ MemManage\n\r");
+  ServUsart->writeString(ServUsart->usartHandle ,"$ MemManage\n\r");
 	_Error_Handler(__FILE__, __LINE__);
 }
 
@@ -100,7 +103,7 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
-  serviceUartWriteS("$ BusFault\n\r");
+  ServUsart->writeString(ServUsart->usartHandle ,"$ BusFault\n\r");
 	_Error_Handler(__FILE__, __LINE__);
 }
 
@@ -111,7 +114,7 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
-  serviceUartWriteS("$ UsageFault\n\r"); 
+  ServUsart->writeString(ServUsart->usartHandle ,"$ UsageFault\n\r"); 
 	_Error_Handler(__FILE__, __LINE__);
 }
 

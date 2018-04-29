@@ -16,6 +16,7 @@ SPI_HandleTypeDef spi3;
 
 TIM_HandleTypeDef			tim16;
 
+
 //Variables for avrage filter
 float average = 0.9;
 uint16_t dt   = 10;
@@ -44,8 +45,11 @@ char print_acc[80];
 //extern volatile gps_data gps_nmea;
 //extern volatile uint8_t gps_done_flag;
 
-extern char buf_gps_fix[10000];
-extern uint16_t buf_gps_fix_cnt;
+//extern char buf_gps_fix[10000];
+//extern uint16_t buf_gps_fix_cnt;
+
+//Service Uart Structure Pointer
+extern UsartDriver* ServUsart;
 
 /**
   * @brief  Initialization BMI160
@@ -137,7 +141,7 @@ uint8_t bmi160Init(void)
 		sprintf(print , "$$$ SPI3(BMI160) INIT OK CHIP_ID: 0x%0.2X \r\n" , read);
 		return_value = 0;
 	}
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	for(bmi160_init_cnt = 0 ; bmi160_init_cnt <20 ; bmi160_init_cnt++)
 	{
@@ -162,19 +166,19 @@ uint8_t bmi160Init(void)
 	
 	bmi160Read(BMI160_ERR , &read , 1);
 	sprintf(print , "\n\r$$$ ERR: 0x%0.2X , cnt:%d" , read ,cnt);
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	bmi160Read(BMI160_PMU_STATUS , &read , 1);
 	sprintf(print , "\n\r$$$ STATUS PMU: 0x%0.2X " , read);
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	bmi160Read(BMI160_STATUS , &read , 1);
 	sprintf(print , "\n\r$$$ STATUS: 0x%0.2X " , read);
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	bmi160Read(BMI160_ACC_CONF , &read , 1);
 	sprintf(print , "\n\r$$$ ACC CONF: 0x%0.2X " , read);
-	serviceUartWriteS(print);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	//Set No Motion interrupt
 	//setNoMotionInt();
@@ -295,7 +299,7 @@ void bmi160ReadAcc(int16_t *acc_x , int16_t *acc_y , int16_t *acc_z)
 	"$$$ X: %f [g], Y: %f [g], Z: %f [g] , G: %f [g] , INT0: 0x%0.2X  , INT1: 0x%0.2X , INT2: 0x%0.2X\r\n", 
 	acc.X , acc.Y , acc.Z , acc.acc_g[0] , read, read1 , read2);
 	
-	serviceUartWriteS(print_acc);
+	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 }
 
 /**
@@ -323,7 +327,7 @@ void bmi160ReadAccTEST(void)
 	sprintf(print_acc,
 	"$$$ %d %d %d\r\n", acc.acc_x , acc.acc_y , acc.acc_z);
 	
-	serviceUartWriteS(print_acc);
+	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 }
 
 /**
@@ -425,18 +429,18 @@ void bmi160IntFromInt1(void)
 	//reset int
 	bmi160Write(BMI160_CMD , &int_reset , 1);
 	
-	serviceUartWriteS("$$$ Bmi160 Interrupt\r\n");
+	ServUsart->writeString(ServUsart->usartHandle ,"$$$ Bmi160 Interrupt\r\n");
 	
 	if(read[1] & 0x80)		//noMotion Int
 	{
-		serviceUartWriteS("$$$ No Motion Interrupt\r\n");
+		ServUsart->writeString(ServUsart->usartHandle ,"$$$ No Motion Interrupt\r\n");
 		setAnyMotionInt();
 		no_motion_flag = 1;
 	}
 	
 	if(read[0] & 0x04)		//anyMotionInt
 	{
-		serviceUartWriteS("$$$ Any motion interrupt\r\n");
+		ServUsart->writeString(ServUsart->usartHandle ,"$$$ Any motion interrupt\r\n");
 		setNoMotionInt();
 		no_motion_flag = 0;
 	}
@@ -533,11 +537,11 @@ void tim_16_init(void)
 	bmi160Write(BMI160_CMD , &bmi160_fifo_flush , 1);
 	
 	if(HAL_TIM_Base_Init(&tim16) != HAL_OK){
-		serviceUartWriteS("$$$ error:bmi160.c(400):HAL_TIM_Base_Init\r\n");
+		ServUsart->writeString(ServUsart->usartHandle ,"$$$ error:bmi160.c(400):HAL_TIM_Base_Init\r\n");
 	}
 	__HAL_TIM_ENABLE(&tim16);
 	
-	serviceUartWriteS("$$$ TIM4 INIT OK\r\n");
+	ServUsart->writeString(ServUsart->usartHandle ,"$$$ TIM4 INIT OK\r\n");
 }
 
 /**
