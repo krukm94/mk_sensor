@@ -30,6 +30,8 @@
 // >>>>>>>>>>>> NVIC PRIORITETS
 #define SYSTIC_NVIC_PRIOTITY       	0 
 
+#define USART_BL652_NVIC_PRIORITY		4
+
 #define TIM16_NVIC_PRIORITY					6
 
 // >>>>>>>>>>>> PIN DEFINES
@@ -61,11 +63,11 @@
 #define PPG_CLK_PIN									GPIO_PIN_8
 #define PPG_CLK_PORT								GPIOA
 
-#define SERVICE_UART_TX_PIN					GPIO_PIN_9
-#define SERVICE_UART_TX_PORT				GPIOA
+#define SERVICE_USART_TX_PIN				GPIO_PIN_9
+#define SERVICE_USART_TX_PORT				GPIOA
 
-#define SERVICE_UART_RX_PIN					GPIO_PIN_10
-#define SERVICE_UART_RX_PORT				GPIOA
+#define SERVICE_USART_RX_PIN				GPIO_PIN_10
+#define SERVICE_USART_RX_PORT				GPIOA
 
 #define USB_DM_PIN									GPIO_PIN_11
 #define USB_DM_PORT									GPIOA
@@ -93,11 +95,11 @@
 #define SIO_09_BL652_PIN 						GPIO_PIN_2
 #define SIO_09_BL652_PORT 					GPIOB
 
-#define UART_RTS_BL652_PIN 					GPIO_PIN_3
-#define UART_RTS_BL652_PORT 				GPIOB
+#define USART3_CTS_PIN 							GPIO_PIN_3   //USART_RTS_BL652  (Cross)
+#define USART3_CTS_PORT							GPIOB
 
-#define UART_CTS_BL652_PIN 					GPIO_PIN_4
-#define UART_CTS_BL652_PORT 				GPIOB
+#define USART3_RTS_PIN 							GPIO_PIN_4   //USART_CTS_BL652  (Cross)
+#define USART3_RTS_PORT 						GPIOB
 
 #define SPI_CS_EXT2_PIN 						GPIO_PIN_5
 #define	SPI_CS_EXT2_PORT 						GPIOB
@@ -222,17 +224,17 @@
 
 
 // >>>>>>>>>>>> BL652 UART MAP
-#define BL652_UART_INSTANCE					USART3
+#define BL652_USART_INSTANCE				USART3
 
-#define UART_RX_BL652_PIN 					USART3_TX_PIN		//CROSS
-#define UART_RX_BL652_PORT 					USART3_TX_PORT	//CROSS
+#define USART_RX_BL652_PIN 					USART3_TX_PIN		//CROSS
+#define USART_RX_BL652_PORT 				USART3_TX_PORT	//CROSS
 
-#define UART_TX_BL652_PIN						USART3_RX_PIN		//CROSS
-#define UART_TX_BL652_PORT 					USART3_RX_PORT	//CROSS
+#define USART_TX_BL652_PIN					USART3_RX_PIN		//CROSS
+#define USART_TX_BL652_PORT 				USART3_RX_PORT	//CROSS
 
 // >>>>>>>>>>>> INTERFACESS
 
-#define SERVICE_UART_INSTANCE				USART1
+#define SERVICE_USART_INSTANCE			USART1
 
 #define LPUART_EXT_INSTANCE					LPUART1
 
@@ -257,6 +259,25 @@ void init(void);
 
 void _Error_Handler(char * file, int line);
 
+
+// >>>>>>>>>>>> EnNUM TYPES
+
+enum STATUS_MK {
+		OK_MK = 0x00,
+		ERROR_MK = 0x01
+};
+
+enum FLAG_GLOBAL_MK {
+		
+		BL652_RX_FLAG		 		= 0b0000000000000001,
+		SERV_USART_RX_FLAG  = 0b0000000000000010	
+};
+
+enum FLAG_GLOBAL_POS_MK {
+		
+		BL652_RX_POS			 	= 0,
+		SERV_USART_RX_POS		= 1
+};
 
 #endif //__INIT_H_
 

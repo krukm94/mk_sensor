@@ -57,6 +57,10 @@ extern volatile uint32_t system_cnt;
 
 // Uart Driver Struct
 extern UsartDriver* ServUsart;
+extern UsartDriver* BL652Usart;
+
+// Global IRQ flag
+volatile uint8_t irqGlobalFlag;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -64,6 +68,25 @@ extern UsartDriver* ServUsart;
 /******************************************************************************/
 /*            Cortex-M4 Processor Exceptions Handlers                         */
 /******************************************************************************/
+
+
+/**
+  * @brief   This function handles USART3 exception.
+  * @param  None
+  * @retval None
+  */
+void USART3_IRQHandler(void){
+	
+	if(BL652_USART_INSTANCE -> ISR & USART_FLAG_RXNE)
+	{
+		  //Save rx byte
+			BL652Usart ->rxRead = BL652_USART_INSTANCE -> RDR;
+		
+			//Set BL652 rx flag
+			irqGlobalFlag = BL652_RX_FLAG;
+	}
+}
+
 
 /**
   * @brief   This function handles NMI exception.

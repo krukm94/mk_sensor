@@ -1,6 +1,7 @@
 //NAME: 	"init.c"
 //AUTHOR:	M.KRUK
-//DATE 	:	XI.2017
+//DATE 	: IV.2018
+
 
 #include "init.h"
 
@@ -25,7 +26,7 @@ void init(void)
 	//gpioInit();
 
 	// Service Uart Init
-	InitUsartDrivers();
+	serviceUartInit(2000000);
 	
 	sprintf(print_buf , "\n\r### M.KRUK ### \n\r### ->L4<- ### \n\r### Compilation Time: %s\n\r\n\r" , __TIME__);
 	

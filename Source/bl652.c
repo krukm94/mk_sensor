@@ -5,64 +5,52 @@
 
 #include "bl652.h"
 
-UART_HandleTypeDef  bl652_uart;
 
 //Service Uart Structure Pointer
 extern UsartDriver* ServUsart;
+extern UsartDriver* BL652Usart;
+
+//Global Read byte
+volatile uint8_t rxReadBl652;
 
 /**
-  * @brief  BL652 Init
+  * @brief  Init BL652
 	* @ret  	Init Status
   */
+
 uint8_t bl652Init(void){
 	
-	// >>>>>>>>>>>>>>> Uart Init
-	GPIO_InitTypeDef gpio;
-	uint8_t ret_value = 1;
+	uint8_t ret_val = ERROR_MK;
 	
-	//RCC ON
-	__HAL_RCC_USART3_CLK_ENABLE();
-	__HAL_RCC_GPIOA_CLK_ENABLE();
+	//Init BL652 Uart
+	bl652UartInit(115200);
 	
-	//GPIO INIT
-	gpio.Pin = UART_TX_BL652_PIN;
-	gpio.Mode = GPIO_MODE_AF_PP;
-	gpio.Pull = GPIO_PULLUP;
-	gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	gpio.Alternate = GPIO_AF7_USART3;
-	HAL_GPIO_Init(UART_TX_BL652_PORT , &gpio);
+	BL652Usart ->rxIntFunc = rxIntBl652;
 	
-	gpio.Pin = UART_RX_BL652_PIN;
-	gpio.Mode = GPIO_MODE_AF_PP;
-	gpio.Pull = GPIO_PULLUP;
-	gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-	gpio.Alternate = GPIO_AF7_USART3;
-	HAL_GPIO_Init(UART_RX_BL652_PORT , &gpio);
+	//Check Device Name
+	BL652Usart -> writeString(BL652Usart ->usartHandle , "AT i 0");
 	
-	bl652_uart.Instance = BL652_UART_INSTANCE;
-	bl652_uart.Init.BaudRate = 115200;
-	bl652_uart.Init.StopBits = UART_STOPBITS_1;
-	bl652_uart.Init.Parity = UART_PARITY_NONE;
-	bl652_uart.Init.Mode = UART_MODE_TX_RX;
-	bl652_uart.Init.WordLength = UART_WORDLENGTH_8B;
-	bl652_uart.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	bl652_uart.Init.OverSampling = UART_OVERSAMPLING_16;
-	bl652_uart.Init.OneBitSampling = UART_ONEBIT_SAMPLING_DISABLED;
-
-	ret_value = HAL_UART_Init(&bl652_uart);
-	if(ret_value != 0)
-	{
-		char buf[40];
-		sprintf(buf , "HAL_UART_Init = %d Error, File: bl652.c, line: 53\r\n" , ret_value);
-		ServUsart->writeString(ServUsart->usartHandle ,buf);
-		
-		return 1;
-	}
+	//Check BLE Stack Build Number
+	BL652Usart -> writeString(BL652Usart ->usartHandle , "AT i 1");
 	
-	__HAL_UART_ENABLE(&bl652_uart);
+	//Check Version number of module firmware
+	BL652Usart -> writeString(BL652Usart ->usartHandle , "AT i 3");
 	
-	// >>>>>>>>>>>>>>> Uart Init END <<<<<<<<<<<<<<<<<<<
+	//Check Chipset ID
+	BL652Usart -> writeString(BL652Usart ->usartHandle , "AT i 5");
 	
-	return ret_value;
+	return ret_val;
 }
 
+/**
+  * @brief  Rx Int Function
+	* @ret  	
+  */
+
+uint8_t rxIntBl652(void){
+	
+	// Tymczasowe przepychanie odebranych wiadmosci na service uart
+	ServUsart ->writeChar(ServUsart->usartHandle, BL652Usart ->rxRead);
+	
+	return OK_MK;
+}

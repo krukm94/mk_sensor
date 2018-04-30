@@ -9,8 +9,10 @@
 
 
 // >>>>>>>>>>>> Functions
-
 uint8_t bl652Init(void);
+
+uint8_t rxIntBl652(void);
+
 
 #endif //__bl652_H_
 
