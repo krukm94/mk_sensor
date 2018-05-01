@@ -83,7 +83,7 @@ void USART3_IRQHandler(void){
 			BL652Usart ->rxRead = BL652_USART_INSTANCE -> RDR;
 		
 			//Set BL652 rx flag
-			irqGlobalFlag = BL652_RX_FLAG;
+			irqGlobalFlag |= (1 << BL652_RX_POS);
 	}
 }
 
