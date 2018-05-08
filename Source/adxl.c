@@ -40,31 +40,31 @@ uint8_t adxlInit(void)
 	gpio.Pin 				= ADXL_MISO_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_VERY_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_MISO_PORT , &gpio);
 	
 	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= ADXL_MOSI_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_VERY_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_MOSI_PORT , &gpio);
 	
 	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= ADXL_CLK_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_VERY_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CLK_PORT , &gpio);
 	
 	gpio.Mode 			= GPIO_MODE_OUTPUT_PP;
 	gpio.Pull 			= GPIO_PULLDOWN;
 	gpio.Pin 				= ADXL_CS_PIN;
-	gpio.Speed			= GPIO_SPEED_FREQ_VERY_HIGH;
+	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CS_PORT , &gpio);
 	
 	spi3_ad.Instance 							= ADXL_SPI_INSTANCE;
-	spi3_ad.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+	spi3_ad.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
 	spi3_ad.Init.DataSize 					= SPI_DATASIZE_8BIT;
 	spi3_ad.Init.Direction 				= SPI_DIRECTION_2LINES;
 	spi3_ad.Init.Mode 							= SPI_MODE_MASTER;
@@ -94,8 +94,8 @@ uint8_t adxlInit(void)
 	HAL_Delay(10);
 	
 	adxlRead(ADXL_CHIP_ID ,&read, 1);
-	if(read != 0xED){
-		sprintf(print , "$$$ Error, ADXL Bad CHIP ID: 0x%0.2X , should be 0xED\n\r" , read);
+	if(read != 0xAD){
+		sprintf(print , "$$$ Error, ADXL Bad CHIP ID: 0x%0.2X , should be 0xAD\n\r" , read);
 		ServUsart->writeString(ServUsart->usartHandle ,print);
 		
 		return 1;

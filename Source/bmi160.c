@@ -66,47 +66,56 @@ uint8_t bmi160Init(void)
 	
 //	uint8_t acc_800Hz = 0x4B;
 //	uint8_t acc_1600Hz = 0x4C;
+		uint8_t soft_reset = 0x6B;
 	
 	char print[30];
 	
 	//RCC On
-	__HAL_RCC_SPI1_CLK_ENABLE();
+	__HAL_RCC_SPI3_CLK_ENABLE();
+	__HAL_RCC_GPIOC_CLK_ENABLE();
 	__HAL_RCC_GPIOA_CLK_ENABLE();
 	
-	gpio.Pin				= BMI160_INT1_PIN;
-	gpio.Mode				= GPIO_MODE_IT_FALLING;
-	gpio.Pull 			= GPIO_PULLUP;
-	HAL_GPIO_Init(BMI160_INT1_PORT , &gpio);
+//	gpio.Pin				= BMI160_INT1_PIN;
+//	gpio.Mode				= GPIO_MODE_IT_FALLING;
+//	gpio.Pull 			= GPIO_PULLUP;
+//	HAL_GPIO_Init(BMI160_INT1_PORT , &gpio);
 	
-	gpio.Alternate 	= GPIO_AF5_SPI1;
+	gpio.Mode 			= GPIO_MODE_OUTPUT_PP;
+	gpio.Pull 			= GPIO_PULLUP;
+	gpio.Pin 				= BMI160_CS_PIN;
+	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(BMI160_CS_PORT , &gpio);
+	
+	LL_GPIO_SetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);	
+	HAL_Delay(5);
+	LL_GPIO_ResetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);	
+	HAL_Delay(5);
+	LL_GPIO_SetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);	
+	
+	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= BMI160_MISO_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(BMI160_MISO_PORT , &gpio);
 	
-	gpio.Alternate 	= GPIO_AF5_SPI1;
+	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= BMI160_MOSI_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(BMI160_MOSI_PORT , &gpio);
 	
-	gpio.Alternate 	= GPIO_AF5_SPI1;
+	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= BMI160_SCK_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
 	gpio.Pull				= GPIO_NOPULL;
-	gpio.Speed 			= GPIO_SPEED_FREQ_HIGH;
+	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(BMI160_SCK_PORT , &gpio);
 	
-	gpio.Mode 			= GPIO_MODE_OUTPUT_PP;
-	gpio.Pull 			= GPIO_PULLDOWN;
-	gpio.Pin 				= BMI160_CS_PIN;
-	gpio.Speed			= GPIO_SPEED_FREQ_HIGH;
-	HAL_GPIO_Init(BMI160_CS_PORT , &gpio);
-	
+
 	spi3.Instance 							= BMI160_SPI_INSTANCE;
-	spi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+	spi3.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_16;
 	spi3.Init.DataSize 					= SPI_DATASIZE_8BIT;
 	spi3.Init.Direction 				= SPI_DIRECTION_2LINES;
 	spi3.Init.Mode 							= SPI_MODE_MASTER;
@@ -125,27 +134,34 @@ uint8_t bmi160Init(void)
 		_Error_Handler(__FILE__, __LINE__);
 	}
 	
-	LL_GPIO_SetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);
-	
 	HAL_Delay(5);
+	
+	bmi160Write(BMI160_CMD , &soft_reset , 1);
+	
+	HAL_Delay(50);
+	
+	bmi160Read(BMI160_CHECK_ADDR, &read , 1);
+
+	read = 0x00;
 	
 	//Read CHIP ID REG
 	bmi160Read(BMI160_CHIP_ID , &read , 1);
 	
-	//Check Cheap ID
+		//Check Cheap ID
 	if(read != 0xD1) {
 		sprintf(print , "$$$ ERROR, BMI160 BAD CHIP_ID: 0x%0.2X ,should be 0xD1\r\n" , read);
+		ServUsart->writeString(ServUsart->usartHandle , print);
 		return 1;
 	}
 	else {
 		sprintf(print , "$$$ SPI3(BMI160) INIT OK CHIP_ID: 0x%0.2X \r\n" , read);
+		ServUsart->writeString(ServUsart->usartHandle , print);
 		return_value = 0;
 	}
-	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
 	for(bmi160_init_cnt = 0 ; bmi160_init_cnt <20 ; bmi160_init_cnt++)
 	{
-		
+
 		//set acc range
 		setAccRange(2);
 	
@@ -160,8 +176,6 @@ uint8_t bmi160Init(void)
 		if(read & (1<<4)) break;
 		
 		cnt++;
-		
-		
 	}
 	
 	bmi160Read(BMI160_ERR , &read , 1);
@@ -202,9 +216,11 @@ void bmi160Read(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 	
 	LL_GPIO_ResetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN); 		
 
-	HAL_SPI_Transmit(&spi3 , &addr_reg , 1 , 100);
+	HAL_SPI_Transmit(&spi3 , &addr_reg , 1 , 1000);
 		
-	HAL_SPI_Receive(&spi3, (uint8_t *)pData , Size , 100 );	
+	HAL_SPI_Receive(&spi3, (uint8_t *)pData , Size , 1000 );	
+	
+	//HAL_SPI_TransmitReceive(&spi3, &addr_reg, pData , 2, 100);
 	
 	LL_GPIO_SetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN); 		
 }
@@ -219,8 +235,8 @@ void bmi160Write(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 {
 	LL_GPIO_ResetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);
 	
-	HAL_SPI_Transmit(&spi3 , &addr_reg , 1 , 100);
-	HAL_SPI_Transmit(&spi3 , pData , 1 ,100);
+	HAL_SPI_Transmit(&spi3 , &addr_reg , 1 , 1000);
+	HAL_SPI_Transmit(&spi3 , pData , 1 ,1000);
 	
 	LL_GPIO_SetOutputPin(BMI160_CS_PORT , BMI160_CS_PIN);
 }

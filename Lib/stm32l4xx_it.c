@@ -57,7 +57,7 @@ extern volatile uint32_t system_cnt;
 
 // Uart Driver Struct
 extern UsartDriver* ServUsart;
-extern UsartDriver* BL652Usart;
+extern UartDriver* BL652Uart;
 
 // Global IRQ flag
 volatile uint8_t irqGlobalFlag;
@@ -80,10 +80,8 @@ void USART3_IRQHandler(void){
 	if(BL652_USART_INSTANCE -> ISR & USART_FLAG_RXNE)
 	{
 		  //Save rx byte
-			BL652Usart ->rxRead = BL652_USART_INSTANCE -> RDR;
-		
-			//Set BL652 rx flag
-			irqGlobalFlag |= (1 << BL652_RX_POS);
+			BL652Uart ->rxRead = BL652_USART_INSTANCE -> RDR;
+			BL652Uart ->rxIntFunc();
 	}
 }
 

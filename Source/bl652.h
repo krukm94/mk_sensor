@@ -9,7 +9,7 @@
 
 
 // >>>>>>>>>>>> Functions
-uint8_t bl652Init(void);
+uint8_t bl652Init_MK(void);
 
 uint8_t rxIntBl652(void);
 

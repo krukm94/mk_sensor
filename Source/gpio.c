@@ -14,6 +14,7 @@ void gpioInit(void)
 	__HAL_RCC_GPIOB_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
 	
+	
 	//Init pins for PWR managment
 	pwrPinsInit();
 	

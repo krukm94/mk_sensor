@@ -40,6 +40,8 @@
 #define BMI160_FIFO_LENGTH0		((uint8_t) 0x22)
 #define BMI160_FIFO_LENGTH1   ((uint8_t) 0x23)
 
+#define BMI160_CHECK_ADDR			((uint8_t) 0x7F)
+
 
 //Settings
 typedef struct{

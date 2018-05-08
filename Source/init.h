@@ -12,12 +12,11 @@
 #include <cstdio>
 #include <cmath>
 #include <stdlib.h>
+#include "string.h"
 
 // >>>>>>>>>>>> Hal lib
 #include "stm32l4xx_hal.h"
 #include "stm32l4xx_hal_uart.h"
-#include "stm32l4xx_hal_i2c.h"
-#include "stm32l4xx_hal_spi.h"
 
 #include "stm32l4xx_ll_gpio.h"
 
@@ -26,11 +25,20 @@
 #include "bmi160.h"
 #include "adxl.h"
 #include "uart_mk.h"
+#include "bl652.h"
+#include "afe.h"
+#include "timer.h"
 
 // >>>>>>>>>>>> NVIC PRIORITETS
 #define SYSTIC_NVIC_PRIOTITY       	0 
 
-#define USART_BL652_NVIC_PRIORITY		4
+#define AFE_ADC_RDY_PRIORITY				1
+
+#define USART_BL652_NVIC_PRIORITY		2
+
+#define TIM2_NVIC_PRIORITY					3
+
+#define TIM3_NVIC_PRIORITY					3
 
 #define TIM16_NVIC_PRIORITY					6
 
@@ -95,11 +103,11 @@
 #define SIO_09_BL652_PIN 						GPIO_PIN_2
 #define SIO_09_BL652_PORT 					GPIOB
 
-#define USART3_CTS_PIN 							GPIO_PIN_3   //USART_RTS_BL652  (Cross)
-#define USART3_CTS_PORT							GPIOB
+#define USART3_RTS_PIN 							GPIO_PIN_3  
+#define USART3_RTS_PORT							GPIOB
 
-#define USART3_RTS_PIN 							GPIO_PIN_4   //USART_CTS_BL652  (Cross)
-#define USART3_RTS_PORT 						GPIOB
+#define USART3_CTS_PIN 							GPIO_PIN_4   
+#define USART3_CTS_PORT 						GPIOB
 
 #define SPI_CS_EXT2_PIN 						GPIO_PIN_5
 #define	SPI_CS_EXT2_PORT 						GPIOB
@@ -232,6 +240,27 @@
 #define USART_TX_BL652_PIN					USART3_RX_PIN		//CROSS
 #define USART_TX_BL652_PORT 				USART3_RX_PORT	//CROSS
 
+// >>>>>>>>>>>> AFE4404 MAP
+
+#define AFE_I2C_ADDRESS							((uint16_t) 0x58)
+	
+#define AFE_I2C_INSTANCE						I2C1
+
+// >>>>>>>>>>>> MAX MAP
+#define MAX_SPI_INSTANCE						SPI3 
+
+#define MAX_MISO_PIN								SPI3_MISO_PIN
+#define MAX_MISO_PORT								SPI3_MISO_PORT
+
+#define MAX_MOSI_PIN								SPI3_MOSI_PIN
+#define MAX_MOSI_PORT								SPI3_MOSI_PORT
+
+#define MAX_CLK_PIN									SPI3_SCK_PIN
+#define MAX_CLK_PORT								SPI3_SCK_PORT
+
+#define MAX_CS_PIN									SPI_CS_EXT2_PIN
+#define MAX_CS_PORT									SPI_CS_EXT2_PORT
+
 // >>>>>>>>>>>> INTERFACESS
 
 #define SERVICE_USART_INSTANCE			USART1
@@ -269,8 +298,8 @@ enum STATUS_MK {
 
 enum FLAG_GLOBAL_MK {
 		
-		BL652_RX_FLAG		 		= 0b0000000000000001,
-		SERV_USART_RX_FLAG  = 0b0000000000000010	
+		BL652_RX_FLAG		 		= 0b00000001,
+		SERV_USART_RX_FLAG  = 0b00000010
 };
 
 enum FLAG_GLOBAL_POS_MK {
