@@ -44,7 +44,7 @@ void init(void)
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
 
 	// Service Uart Init
-	serviceUartInit(115200);
+	serviceUartInit(2000000);
 	
 	sprintf(print_buf , "\n\r### M.KRUK ### \n\r### ->L4<- ### \n\r### Compilation Time: %s\n\r\n\r" , __TIME__);
 	
@@ -59,7 +59,7 @@ void init(void)
 	//bl652Init_MK();
 	
 	//Init ADXL355 
-	//adxlInit();
+	adxlInit();
 	
 	//Init Timeres
 	//init_timers();
@@ -68,7 +68,7 @@ void init(void)
 	//afeInit();
 	
 	//MAX30003
-	maxInit();
+	//maxInit();
 	
 }
 
@@ -76,7 +76,7 @@ void init(void)
 */
 void SystemClock_Config(void)
 {
-   RCC_OscInitTypeDef RCC_OscInitStruct;
+  RCC_OscInitTypeDef RCC_OscInitStruct;
   RCC_ClkInitTypeDef RCC_ClkInitStruct;
 
     /**Initializes the CPU, AHB and APB busses clocks 

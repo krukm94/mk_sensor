@@ -20,7 +20,7 @@ uint8_t maxInit(void)
 	//GPIO handle
 	GPIO_InitTypeDef gpio;
 
-	uint8_t set = 0, read = 0;
+//	uint8_t set = 0, read = 0;
 	uint8_t ret_value = 1;
 	
 	int32_t rd;

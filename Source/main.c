@@ -13,7 +13,8 @@
 
 int main(void){
 
-	uint8_t read = 0;
+	//ADXL read axis values
+	int32_t axis_x, axis_y, axis_z;
 	
 	// Init HAL
 	HAL_Init();
@@ -23,11 +24,11 @@ int main(void){
 	
 	while(1)
 	{
-		
-		//Read CHIP ID REG
-		adxlRead(ADXL_CHIP_ID ,&read, 1);
-		
-		HAL_Delay(200);
+			// ADXL355 Data read
+			adxlReadAcc(&axis_x, &axis_y, &axis_z);
+			
+			//Delay(17);
+			HAL_Delay(200);		//wahit 17 ms
 	}
 }
 

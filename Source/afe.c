@@ -169,8 +169,28 @@ void afeInit(void)
 	
 	//Check settings of registers
 	check_reg_val(dev_addr);
+	
+	initMcp980();
 }
 
+/**
+  * @brief  initMcp980
+	* @retval None
+  */
+void initMcp980(void){
+	
+	uint8_t ret_val;
+	uint8_t dev_id[2];
+	
+	uint8_t mcp_addr = 0x18;
+	uint8_t mcp_dev_id = 0x07;
+	char print[30];
+	//read Device IF
+	ret_val = HAL_I2C_Mem_Read(&hi2c1, mcp_addr , mcp_dev_id, 1 , dev_id, 2 , 100);
+	
+	sprintf(print, "&&& TEMP sensor, Device ID: 0x%x 0x%x\r\n" , dev_id[0] , dev_id[1]);
+	ServUsart->writeString(ServUsart->usartHandle , print);
+}
 
 /**
   * @brief  Afe read LED Current

@@ -12,7 +12,7 @@ volatile uint8_t spi_read;
 
 volatile acc_axis_adxl acc_adxl;	//Acc structure declaration
 
-#define LSB_8g 							15.25878906				//15.25878906 ug
+#define LSB_8g 							15.258789				//15.25878906 ug
 #define LSB_4g							7.629394531				//7.629394531 ug
 #define LSB_2g							3.814697266				//3.814697266 ug
 
@@ -27,10 +27,13 @@ uint8_t adxlInit(void)
 	//GPIO handle
 	GPIO_InitTypeDef gpio;
 
-	uint8_t set = 0, read = 0;
-	uint8_t ret_value = 1;
+	uint8_t set = 0;
+	uint8_t read = 0;
+//	uint8_t read_buf[3];
+
+	int8_t ret_value = 1;
 	
-	char print[30];
+	char print[50];
 	
 	//RCC On
 	__HAL_RCC_SPI3_CLK_ENABLE();
@@ -63,19 +66,19 @@ uint8_t adxlInit(void)
 	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CS_PORT , &gpio);
 	
-	spi3_ad.Instance 							= ADXL_SPI_INSTANCE;
-	spi3_ad.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_32;
+	spi3_ad.Instance 								= ADXL_SPI_INSTANCE;
+	spi3_ad.Init.BaudRatePrescaler 	= SPI_BAUDRATEPRESCALER_128;
 	spi3_ad.Init.DataSize 					= SPI_DATASIZE_8BIT;
-	spi3_ad.Init.Direction 				= SPI_DIRECTION_2LINES;
+	spi3_ad.Init.Direction 					= SPI_DIRECTION_2LINES;
 	spi3_ad.Init.Mode 							= SPI_MODE_MASTER;
 	spi3_ad.Init.CLKPhase 					= SPI_PHASE_1EDGE;
 	spi3_ad.Init.TIMode 						= SPI_TIMODE_DISABLE;
 	spi3_ad.Init.FirstBit 					= SPI_FIRSTBIT_MSB;
-	spi3_ad.Init.CLKPolarity 			= SPI_POLARITY_LOW;
-	spi3_ad.Init.NSS 							= SPI_NSS_SOFT;
-	spi3_ad.Init.CRCPolynomial 		= 7;
+	spi3_ad.Init.CLKPolarity 				= SPI_POLARITY_LOW;
+	spi3_ad.Init.NSS 								= SPI_NSS_SOFT;
+	spi3_ad.Init.CRCPolynomial 			= 7;
 	spi3_ad.Init.CRCCalculation 		= SPI_CRCCALCULATION_DISABLE;
-	spi3_ad.Init.CRCLength 				= SPI_CRC_LENGTH_DATASIZE;
+	spi3_ad.Init.CRCLength 					= SPI_CRC_LENGTH_DATASIZE;
 	spi3_ad.Init.NSSPMode 					= SPI_NSS_PULSE_ENABLE;
 	
 	ret_value = HAL_SPI_Init(&spi3_ad);
@@ -93,6 +96,12 @@ uint8_t adxlInit(void)
 	
 	HAL_Delay(10);
 	
+	//Reset ADXL
+	set = 0x52;
+	adxlWrite(ADXL_RESET , &set , 1);
+	
+	HAL_Delay(50);
+	
 	adxlRead(ADXL_CHIP_ID ,&read, 1);
 	if(read != 0xAD){
 		sprintf(print , "$$$ Error, ADXL Bad CHIP ID: 0x%0.2X , should be 0xAD\n\r" , read);
@@ -109,23 +118,29 @@ uint8_t adxlInit(void)
 	
 	
 	adxlRead(ADXL_POWER , &set , 1);									
-	set = 0x00;
+	set = set & 0xFE;
  	adxlWrite(ADXL_POWER , &set , 1);									//SET MEASURMENT ON
+	
+	//Set Data Sync register
+	adxlWrite(ADXL_POWER , &set , 1);									//SET MEASURMENT ON
+
+	//read again ADXL POWER CTL register
+	set = 0x00;
+	adxlRead(ADXL_POWER , &set , 1);	
 	
 	sprintf(print , "$$$ SET: 0x%0.2X \n\r" , set);
 	ServUsart->writeString(ServUsart->usartHandle ,print);
 
 	adxlRead(ADXL_RANGE , &set , 1);
-	set |= RANGE_2G;
- 	adxlWrite(ADXL_RANGE , &set , 1);									//SET RANGE = 8g
+	set |= RANGE_8G;
+ 	adxlWrite(ADXL_RANGE , &set , 1);									//SET RANGE = 2g
 	
 	adxlRead(ADXL_ODR_LPF , &set , 1);
-	set |= 0x02;
- 	adxlWrite(ADXL_ODR_LPF , &set , 1);								//SET ODR
+	set |= 0x0A;
+ 	adxlWrite(ADXL_ODR_LPF , &set , 1);								//SET ODR To 62.5
 	
 	return ret_value;
 }
-
 
 /**
   * @brief  Read adxl register
@@ -135,15 +150,40 @@ uint8_t adxlInit(void)
   */
 void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 {
-	uint8_t addr = ((addr_reg << 1) | 1);											//Address to send
+	uint8_t addr = ((addr_reg << 1) | 1);													//Address to send
 
 	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN); 					//CS LOW
 
-	HAL_SPI_Transmit(&spi3_ad , (uint8_t*) &addr , 1 , 100);			//SEND REGISTER ADDRESS
+	HAL_SPI_Transmit(&spi3_ad, &addr, 1, 100);											//SEND REGISTER ADDRESS
 
-	HAL_SPI_Receive(&spi3_ad, (uint8_t *)pData , Size , 100 );		//RECEIVE DATA
+	HAL_SPI_Receive(&spi3_ad, (uint8_t *)pData , Size , 100 );			//RECEIVE DATA
 
 	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN); 						//CS HIGH
+}
+
+/**
+  * @brief  adxl Multi Byte Read
+	* @param  addr_teg : adres of register to read
+	*  				pData    : Pionter to data
+	*					Size		 : Size of data to send
+  */
+void adxlMultiByteRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
+{
+	uint8_t addr = ((addr_reg << 1) | 1);													//Address to send	
+	uint8_t dummy_byte = 0xFF;
+
+	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);						//CS LOW
+	
+	HAL_SPI_Transmit(&spi3_ad, &addr, 1, 100);										//SEND REGISTER ADDRES
+	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
+	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
+	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
+	
+	HAL_SPI_Receive(&spi3_ad, &dummy_byte , 1 , 100 );						//RECEIVE DUMMY BYTE
+	
+	HAL_SPI_Receive(&spi3_ad, pData , 3 , 100 );									//RECEIVE DATA
+	
+	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);							//CS HIGH
 }
 
 
@@ -155,16 +195,15 @@ void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
   */
 void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 {
-	uint8_t addr = (addr_reg << 1);												//Address to send
+	uint8_t addr = (addr_reg << 1);																//Address to send
 	
-	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);			//CS LOW
+	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);						//CS LOW
 	
-	HAL_SPI_Transmit(&spi3_ad , &addr , 1 , 100);						//SEND REGISTER ADDRES
-	HAL_SPI_Transmit(&spi3_ad , pData , 1 ,100);							//SEND DATA
+	HAL_SPI_Transmit(&spi3_ad , &addr , 1 ,100);									//SEND REGISTER ADDRES
+	HAL_SPI_Transmit(&spi3_ad , pData , 1 ,100);										//SEND DATA
 	
-	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);				//CS HIGH
+	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);							//CS HIGH
 }
-
 
 /**
   * @brief  Read bmi160 accelerometer values
@@ -172,24 +211,57 @@ void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
   */
 void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
 {
-	//uint8_t read, read1 , read2;
-	char print_acc[100];
+	char print_acc[200];
+	uint8_t acc_buf[9];
 	
-	adxlRead( ADXL_X_DATA , (uint8_t *)acc_adxl.acc_buf , 9);
+	uint32_t accX,accY,accZ;
+	float accXf,accYf,accZf;
+
+	adxlMultiByteRead(ADXL_X_DATA, acc_buf, 3);
+	adxlMultiByteRead(ADXL_Y_DATA, &acc_buf[3], 3);
+	adxlMultiByteRead(ADXL_Z_DATA, &acc_buf[6], 3);
 	
-	acc_adxl.acc_x = (acc_adxl.acc_buf[0] << 12) | acc_adxl.acc_buf[1] << 4 | acc_adxl.acc_buf[2] >> 4;
-	acc_adxl.acc_y = (acc_adxl.acc_buf[3] << 12) | acc_adxl.acc_buf[4] << 4 | acc_adxl.acc_buf[5] >> 4;
-	acc_adxl.acc_z = (acc_adxl.acc_buf[6] << 12) | acc_adxl.acc_buf[7] << 4 | acc_adxl.acc_buf[8] >> 4;
+	accX = ((acc_buf[0] << 16) | (acc_buf[1] << 8) | (acc_buf[2] ));
+	accY = ((acc_buf[3] << 16) | (acc_buf[4] << 8) | (acc_buf[5] ));
+	accZ = ((acc_buf[6] << 16) | (acc_buf[7] << 8) | (acc_buf[8] ));
+	
+	acc_adxl.acc_x	= ADXL355_Acceleration_Data_Conversion(accX);
+	acc_adxl.acc_y	= ADXL355_Acceleration_Data_Conversion(accY);
+	acc_adxl.acc_z	= ADXL355_Acceleration_Data_Conversion(accZ);
 	
 	acc_adxl.X = (acc_adxl.acc_x * LSB_8g)/1000000;												
 	acc_adxl.Y = (acc_adxl.acc_y * LSB_8g)/1000000;
 	acc_adxl.Z = (acc_adxl.acc_z * LSB_8g)/1000000;
 	
+	accXf = (accX * LSB_8g)/1000000;												
+	accYf = (accY * LSB_8g)/1000000;
+	accZf = (accZ * LSB_8g)/1000000;
+	
 	acc_adxl.acc_g[0] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
 	
-	sprintf(print_acc, "$$$ %d %d %d\r\n" , acc_adxl.acc_x , acc_adxl.acc_y , acc_adxl.acc_z);
-	
+	//sprintf(print_acc, "%d (%d) %d (%d) %d (%d)\r\n" , acc_adxl.acc_x, accX , acc_adxl.acc_y, accY , accZ , acc_adxl.Z);
+	//sprintf(print_acc, "%d (%.2f) %d (%.2f) %d (%.2f)\r\n" , acc_adxl.acc_x, acc_adxl.X , acc_adxl.acc_y, acc_adxl.Y , acc_adxl.acc_z , acc_adxl.Z);
+	//sprintf(print_acc, "%d (%.2f) %d (%.2f) %d (%.2f)\r\n" , x, acc_adxl.X , y, acc_adxl.Y , z , acc_adxl.Z);
+		
+	sprintf(print_acc, "con_x 0x%.2X (G_xc %.2f) | x 0x%.2X (G_x %.2f) || con_y 0x%.2X (G_yc %.2f) | y 0x%.2X (G_y %.2f) || con_z 0x%.2X (G_zc %.2f) | z 0x%.2X (G_z %.2f)\r\n" , acc_adxl.acc_x, acc_adxl.X, accX, accXf, acc_adxl.acc_y, acc_adxl.Y, accY, accYf, acc_adxl.acc_z, acc_adxl.Z, accZ, accZf);
 	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 }
 
+int32_t ADXL355_Acceleration_Data_Conversion (uint32_t ui32SensorData)
+{
+   int32_t volatile i32Conversion = 0;
 
+   ui32SensorData = (ui32SensorData  >> 4);
+   ui32SensorData = (ui32SensorData & 0x000FFFFF);
+
+   if((ui32SensorData & 0x00080000)  == 0x00080000){
+
+      i32Conversion = (ui32SensorData | 0xFFF00000);
+
+   }
+   else{
+         i32Conversion = ui32SensorData;
+   }
+
+   return i32Conversion;
+}

@@ -64,8 +64,15 @@
 #define OFFDAC								((uint8_t) 0x3A)
 
 
+// >>>>>>>>> TEMP SENSOR
+#define MCP_ADR								((uint8_t) 0x48)
+
+#define MCP_DEV_ID						((uint8_t) 0x07)
+
+
 // >>>>>>>>> functions
 void afeInit(void);
+void initMcp980(void);
 
 int8_t check_afe_communication(uint16_t device_address);
 

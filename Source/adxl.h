@@ -2,8 +2,8 @@
 //AUTHOR:	M.KRUK
 //DATE 	:	IV.2018
 
-#ifndef __bl652_H_
-#define __bl652_H_
+#ifndef __adxl_H_
+#define __adxl_H_
 
 #include "init.h"
 
@@ -17,7 +17,9 @@
 #define ADXL_POWER					((uint8_t)0x2D)
 #define ADXL_ODR_LPF				((uint8_t)0x28)
 #define ADXL_RANGE					((uint8_t)0x2C)
+#define ADXL_SYNC						((uint8_t)0x2B)
 #define ADXL_RESET					((uint8_t)0x2F)
+#define ADXL_SELF_TEST			((uint8_t)0x2E)
 
 #define RANGE_8G						((uint8_t)0x03)
 #define RANGE_4G						((uint8_t)0x02)
@@ -39,10 +41,12 @@ typedef struct{
 // >>>>>>>>> functions
 uint8_t adxlInit(void);
 void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
+void adxlMultiByteRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 
 void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z);
+int32_t ADXL355_Acceleration_Data_Conversion (uint32_t ui32SensorData);
 
 
-#endif //__bl652_H_
+#endif //__adxl_H_
 
