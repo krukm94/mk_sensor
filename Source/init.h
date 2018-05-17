@@ -89,8 +89,8 @@
 #define SWDCLK_PIN									GPIO_PIN_14
 #define SWDCLK_PORT									GPIOA
 
-#define	BMI160_CS_PIN								GPIO_PIN_15
-#define BMI160_CS_PORT							GPIOA
+//#define	BMI160_CS_PIN								GPIO_PIN_15
+//#define BMI160_CS_PORT							GPIOA
 
 // >>>>>>>>>>>> PIN DEFINES
 // PORT B
@@ -210,6 +210,9 @@
 
 #define BMI160_SCK_PIN							SPI3_SCK_PIN
 #define BMI160_SCK_PORT							SPI3_SCK_PORT
+
+#define BMI160_CS_PIN								SPI_CS_EXT1_PIN
+#define BMI160_CS_PORT							SPI_CS_EXT1_PORT
 						
 
 // >>>>>>>>>>>> ADXL MAP

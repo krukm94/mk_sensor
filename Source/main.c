@@ -24,11 +24,10 @@ int main(void){
 	
 	while(1)
 	{
-			// ADXL355 Data read
-			adxlReadAcc(&axis_x, &axis_y, &axis_z);
-			
-			//Delay(17);
-			HAL_Delay(200);		//wahit 17 ms
+		
+		adxlReadAcc(&axis_x, &axis_y, &axis_z);
+		HAL_Delay(200);
+
 	}
 }
 

@@ -41,11 +41,16 @@ typedef struct{
 // >>>>>>>>> functions
 uint8_t adxlInit(void);
 void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
-void adxlMultiByteRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 
 void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z);
-int32_t ADXL355_Acceleration_Data_Conversion (uint32_t ui32SensorData);
+
+void spiADXLWriteByte (int8_t byte);
+int8_t spiADXLReadByte (void);
+int8_t spiADXLWriteReadByte (int8_t byte);
+
+void adxlWriteTS(uint8_t addr_reg , uint8_t wrData);
+void adxlReadTS(uint8_t addr_reg , uint8_t* pData , uint8_t Size);
 
 
 #endif //__adxl_H_

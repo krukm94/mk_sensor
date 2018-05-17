@@ -42,7 +42,7 @@ uint8_t adxlInit(void)
 	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= ADXL_MISO_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
-	gpio.Pull				= GPIO_NOPULL;
+	gpio.Pull				= GPIO_PULLUP;
 	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_MISO_PORT , &gpio);
 	
@@ -56,18 +56,18 @@ uint8_t adxlInit(void)
 	gpio.Alternate 	= GPIO_AF6_SPI3;
 	gpio.Pin 				= ADXL_CLK_PIN;
 	gpio.Mode 			= GPIO_MODE_AF_PP;
-	gpio.Pull				= GPIO_NOPULL;
+	gpio.Pull				= GPIO_PULLDOWN;
 	gpio.Speed 			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CLK_PORT , &gpio);
 	
 	gpio.Mode 			= GPIO_MODE_OUTPUT_PP;
-	gpio.Pull 			= GPIO_PULLDOWN;
+	gpio.Pull 			= GPIO_PULLUP;
 	gpio.Pin 				= ADXL_CS_PIN;
 	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CS_PORT , &gpio);
 	
 	spi3_ad.Instance 								= ADXL_SPI_INSTANCE;
-	spi3_ad.Init.BaudRatePrescaler 	= SPI_BAUDRATEPRESCALER_128;
+	spi3_ad.Init.BaudRatePrescaler 	= SPI_BAUDRATEPRESCALER_8;
 	spi3_ad.Init.DataSize 					= SPI_DATASIZE_8BIT;
 	spi3_ad.Init.Direction 					= SPI_DIRECTION_2LINES;
 	spi3_ad.Init.Mode 							= SPI_MODE_MASTER;
@@ -79,7 +79,7 @@ uint8_t adxlInit(void)
 	spi3_ad.Init.CRCPolynomial 			= 7;
 	spi3_ad.Init.CRCCalculation 		= SPI_CRCCALCULATION_DISABLE;
 	spi3_ad.Init.CRCLength 					= SPI_CRC_LENGTH_DATASIZE;
-	spi3_ad.Init.NSSPMode 					= SPI_NSS_PULSE_ENABLE;
+	spi3_ad.Init.NSSPMode 					= SPI_NSS_PULSE_DISABLED;
 	
 	ret_value = HAL_SPI_Init(&spi3_ad);
 	
@@ -92,17 +92,13 @@ uint8_t adxlInit(void)
 		return 1;
 	}
 	
+	__HAL_SPI_ENABLE(&spi3_ad);
+	
 	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);
 	
 	HAL_Delay(10);
 	
-	//Reset ADXL
-	set = 0x52;
-	adxlWrite(ADXL_RESET , &set , 1);
-	
-	HAL_Delay(50);
-	
-	adxlRead(ADXL_CHIP_ID ,&read, 1);
+	adxlReadTS(ADXL_CHIP_ID ,&read, 1);
 	if(read != 0xAD){
 		sprintf(print , "$$$ Error, ADXL Bad CHIP ID: 0x%0.2X , should be 0xAD\n\r" , read);
 		ServUsart->writeString(ServUsart->usartHandle ,print);
@@ -116,30 +112,58 @@ uint8_t adxlInit(void)
 		ServUsart->writeString(ServUsart->usartHandle ,print);
 	}
 	
-	
-	adxlRead(ADXL_POWER , &set , 1);									
-	set = set & 0xFE;
- 	adxlWrite(ADXL_POWER , &set , 1);									//SET MEASURMENT ON
-	
-	//Set Data Sync register
-	adxlWrite(ADXL_POWER , &set , 1);									//SET MEASURMENT ON
-
-	//read again ADXL POWER CTL register
+	adxlReadTS(ADXL_POWER , &set , 1);									
 	set = 0x00;
-	adxlRead(ADXL_POWER , &set , 1);	
-	
-	sprintf(print , "$$$ SET: 0x%0.2X \n\r" , set);
-	ServUsart->writeString(ServUsart->usartHandle ,print);
+ 	adxlWriteTS(ADXL_POWER , set);									//SET MEASURMENT ON
 
-	adxlRead(ADXL_RANGE , &set , 1);
-	set |= RANGE_8G;
- 	adxlWrite(ADXL_RANGE , &set , 1);									//SET RANGE = 2g
+	adxlReadTS(ADXL_RANGE , &set , 1);
+	set = RANGE_2G;
+ 	adxlWriteTS(ADXL_RANGE , set );									//SET RANGE = 4g
 	
-	adxlRead(ADXL_ODR_LPF , &set , 1);
-	set |= 0x0A;
- 	adxlWrite(ADXL_ODR_LPF , &set , 1);								//SET ODR To 62.5
+	adxlReadTS(ADXL_ODR_LPF , &set , 1);
+	set = 0x06;
+ 	adxlWriteTS(ADXL_ODR_LPF , set);								//SET ODR To 62.5
 	
 	return ret_value;
+}
+
+
+
+/**
+  * @brief  Read bmi160 accelerometer values
+  * @param  acc_x, acc_y and acc_y are pointers to store acc data
+  */
+void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
+{
+	char print_acc[200];
+	
+	//Variables for data conversion
+	uint32_t accX, accY, accZ;
+
+	adxlReadTS(ADXL_X_DATA, (uint8_t *) acc_adxl.acc_buf, 9);
+	
+	accX = ((acc_adxl.acc_buf[0] << 12) | (acc_adxl.acc_buf[1] << 4) | (acc_adxl.acc_buf[2] >> 4 ));
+	if(accX > 0x0007FFFF) accX |= 0xFFF00000;
+	acc_adxl.acc_x = (int32_t)accX;
+	
+	accY = ((acc_adxl.acc_buf[3] << 12) | (acc_adxl.acc_buf[4] << 4) | (acc_adxl.acc_buf[5] >> 4));
+	if(accY > 0x0007FFFF) accY |= 0xFFF00000;
+	acc_adxl.acc_y = (int32_t)accY;
+	
+	accZ = ((acc_adxl.acc_buf[6] << 12) | (acc_adxl.acc_buf[7] << 4) | (acc_adxl.acc_buf[8] >> 4 ));
+	if(accZ > 0x0007FFFF) accZ |= 0xFFF00000;
+	acc_adxl.acc_z = (int32_t)accZ;
+	
+	acc_adxl.X = (acc_adxl.acc_x * LSB_2g)/1000000;												
+	acc_adxl.Y = (acc_adxl.acc_y * LSB_2g)/1000000;
+	acc_adxl.Z = (acc_adxl.acc_z * LSB_2g)/1000000;
+
+  acc_adxl.acc_g[0] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
+	
+	sprintf(print_acc, "X: %.3f) Y: %.3f Z: %.3f G: %.3f\r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z, acc_adxl.acc_g[0]);
+		
+	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+
 }
 
 /**
@@ -162,32 +186,6 @@ void adxlRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 }
 
 /**
-  * @brief  adxl Multi Byte Read
-	* @param  addr_teg : adres of register to read
-	*  				pData    : Pionter to data
-	*					Size		 : Size of data to send
-  */
-void adxlMultiByteRead(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
-{
-	uint8_t addr = ((addr_reg << 1) | 1);													//Address to send	
-	uint8_t dummy_byte = 0xFF;
-
-	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);						//CS LOW
-	
-	HAL_SPI_Transmit(&spi3_ad, &addr, 1, 100);										//SEND REGISTER ADDRES
-	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
-	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
-	HAL_SPI_Transmit(&spi3_ad, &dummy_byte, 1, 100);							//SEND dUMMY BYTE
-	
-	HAL_SPI_Receive(&spi3_ad, &dummy_byte , 1 , 100 );						//RECEIVE DUMMY BYTE
-	
-	HAL_SPI_Receive(&spi3_ad, pData , 3 , 100 );									//RECEIVE DATA
-	
-	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);							//CS HIGH
-}
-
-
-/**
   * @brief  adxl Write Reg
 	* @param  addr_teg : adres of register to write
 	*  				pData    : Pionter to data
@@ -206,62 +204,75 @@ void adxlWrite(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 }
 
 /**
-  * @brief  Read bmi160 accelerometer values
-  * @param  acc_x, acc_y and acc_y are pointers to store acc data
+  * @brief  Read adxl register ( By T.Sondej)
+	* @param  addr_reg : adres of register
+	*         pData    : Pointer to store read data
+	*					Size     : Size of data to read
   */
-void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
+void adxlReadTS(uint8_t addr_reg , uint8_t* pData , uint8_t Size)
 {
-	char print_acc[200];
-	uint8_t acc_buf[9];
-	
-	uint32_t accX,accY,accZ;
-	float accXf,accYf,accZf;
+uint8_t addr = ((addr_reg << 1) | 1);											//Address to send
 
-	adxlMultiByteRead(ADXL_X_DATA, acc_buf, 3);
-	adxlMultiByteRead(ADXL_Y_DATA, &acc_buf[3], 3);
-	adxlMultiByteRead(ADXL_Z_DATA, &acc_buf[6], 3);
-	
-	accX = ((acc_buf[0] << 16) | (acc_buf[1] << 8) | (acc_buf[2] ));
-	accY = ((acc_buf[3] << 16) | (acc_buf[4] << 8) | (acc_buf[5] ));
-	accZ = ((acc_buf[6] << 16) | (acc_buf[7] << 8) | (acc_buf[8] ));
-	
-	acc_adxl.acc_x	= ADXL355_Acceleration_Data_Conversion(accX);
-	acc_adxl.acc_y	= ADXL355_Acceleration_Data_Conversion(accY);
-	acc_adxl.acc_z	= ADXL355_Acceleration_Data_Conversion(accZ);
-	
-	acc_adxl.X = (acc_adxl.acc_x * LSB_8g)/1000000;												
-	acc_adxl.Y = (acc_adxl.acc_y * LSB_8g)/1000000;
-	acc_adxl.Z = (acc_adxl.acc_z * LSB_8g)/1000000;
-	
-	accXf = (accX * LSB_8g)/1000000;												
-	accYf = (accY * LSB_8g)/1000000;
-	accZf = (accZ * LSB_8g)/1000000;
-	
-	acc_adxl.acc_g[0] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
-	
-	//sprintf(print_acc, "%d (%d) %d (%d) %d (%d)\r\n" , acc_adxl.acc_x, accX , acc_adxl.acc_y, accY , accZ , acc_adxl.Z);
-	//sprintf(print_acc, "%d (%.2f) %d (%.2f) %d (%.2f)\r\n" , acc_adxl.acc_x, acc_adxl.X , acc_adxl.acc_y, acc_adxl.Y , acc_adxl.acc_z , acc_adxl.Z);
-	//sprintf(print_acc, "%d (%.2f) %d (%.2f) %d (%.2f)\r\n" , x, acc_adxl.X , y, acc_adxl.Y , z , acc_adxl.Z);
-		
-	sprintf(print_acc, "con_x 0x%.2X (G_xc %.2f) | x 0x%.2X (G_x %.2f) || con_y 0x%.2X (G_yc %.2f) | y 0x%.2X (G_y %.2f) || con_z 0x%.2X (G_zc %.2f) | z 0x%.2X (G_z %.2f)\r\n" , acc_adxl.acc_x, acc_adxl.X, accX, accXf, acc_adxl.acc_y, acc_adxl.Y, accY, accYf, acc_adxl.acc_z, acc_adxl.Z, accZ, accZf);
-	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);	
+ 
+	spiADXLWriteReadByte(addr);
+  while(Size--)
+  {
+    *pData++=spiADXLWriteReadByte(0xff);  
+  }  
+	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);	
 }
 
-int32_t ADXL355_Acceleration_Data_Conversion (uint32_t ui32SensorData)
+
+/**
+  * @brief  write adxl register ( By T.Sondej)
+	* @param  addr_reg : adres of register
+	*         pData    : Pointer to write data
+  */
+void adxlWriteTS(uint8_t addr_reg , uint8_t wrData)
 {
-   int32_t volatile i32Conversion = 0;
-
-   ui32SensorData = (ui32SensorData  >> 4);
-   ui32SensorData = (ui32SensorData & 0x000FFFFF);
-
-   if((ui32SensorData & 0x00080000)  == 0x00080000){
-
-      i32Conversion = (ui32SensorData | 0xFFF00000);
-
-   }
-   else{
-         i32Conversion = ui32SensorData;
-   }
-
-   return i32Conversion;
+	uint8_t addr = (addr_reg << 1);												//Address to send
+	
+	LL_GPIO_ResetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);	
+  
+	spiADXLWriteReadByte(addr);
+  spiADXLWriteReadByte(wrData);
+	
+	LL_GPIO_SetOutputPin(ADXL_CS_PORT , ADXL_CS_PIN);	
 }
+
+/**
+  * @brief  read SPi byte ( By T.Sondej)
+  */
+int8_t spiADXLReadByte (void)
+{
+  while((ADXL_SPI_INSTANCE->SR & SPI_FLAG_RXNE)==(uint16_t)RESET);
+  return (ADXL_SPI_INSTANCE->DR);
+}
+
+/**
+  * @brief  write SPi byte ( By T.Sondej)
+* @param  byte: byte to read
+  */
+void spiADXLWriteByte (int8_t byte)
+{
+volatile int8_t temp;
+  
+  while((ADXL_SPI_INSTANCE->SR & SPI_FLAG_TXE)!= SPI_FLAG_TXE) {}
+   *((volatile int8_t*)&ADXL_SPI_INSTANCE->DR) = byte;
+  while((ADXL_SPI_INSTANCE->SR & SPI_FLAG_RXNE)!=SPI_FLAG_RXNE);
+  temp = *(volatile int8_t*)&ADXL_SPI_INSTANCE->DR;
+}
+
+/**
+  * @brief  Write Read adxl ( By T.Sondej)
+* @param  byte: byte to send
+  */
+int8_t spiADXLWriteReadByte (int8_t byte)
+{
+  while((ADXL_SPI_INSTANCE->SR & SPI_FLAG_TXE)!= SPI_FLAG_TXE) {}
+  *((volatile int8_t*)&ADXL_SPI_INSTANCE->DR) = byte;
+  while((ADXL_SPI_INSTANCE->SR & SPI_FLAG_RXNE)!=SPI_FLAG_RXNE) {}
+  return (*(volatile int8_t*)&ADXL_SPI_INSTANCE->DR);  
+}
+
