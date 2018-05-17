@@ -62,7 +62,7 @@ void init(void)
 	adxlInit();
 	
 	//Init Timeres
-	//init_timers();
+	init_timers();
 	
 	// AFE device init
 	//afeInit();

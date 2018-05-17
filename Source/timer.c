@@ -14,6 +14,9 @@ volatile uint32_t delay_cnt;
 //Service Uart 
 extern UsartDriver* ServUsart;
 
+//Global Afxl read flag
+extern volatile uint8_t adxlReadFlag;
+
 /**
   * @brief Init all timers 
 */
@@ -61,6 +64,8 @@ void TIM2_IRQHandler(void)
 		__HAL_TIM_CLEAR_FLAG(&tim2, TIM_SR_UIF);	
 	
 		tim2_updates++;
+		
+		adxlReadFlag = 0x01;
 	}
 }
 

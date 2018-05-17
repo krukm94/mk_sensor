@@ -12,9 +12,7 @@ volatile uint8_t spi_read;
 
 volatile acc_axis_adxl acc_adxl;	//Acc structure declaration
 
-#define LSB_8g 							15.258789				//15.25878906 ug
-#define LSB_4g							7.629394531				//7.629394531 ug
-#define LSB_2g							3.814697266				//3.814697266 ug
+volatile uint8_t adxlReadFlag;
 
 //Service Uart Structure Pointer
 extern UsartDriver* ServUsart;
@@ -65,6 +63,16 @@ uint8_t adxlInit(void)
 	gpio.Pin 				= ADXL_CS_PIN;
 	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CS_PORT , &gpio);
+	
+	//INT2 PIN
+//	gpio.Pin = ADXL_INT2_PIN;
+//	gpio.Mode = GPIO_MODE_IT_RISING;
+//	gpio.Pull = GPIO_PULLUP;
+//	HAL_GPIO_Init(ADXL_INT2_PORT, &gpio);
+//	
+//	//Configure NVIC for int pin
+//	HAL_NVIC_SetPriority(EXTI2_IRQn, ADXL_FIFO_FULL_INT_PRIORITY , 0);
+//  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
 	
 	spi3_ad.Instance 								= ADXL_SPI_INSTANCE;
 	spi3_ad.Init.BaudRatePrescaler 	= SPI_BAUDRATEPRESCALER_8;
@@ -118,16 +126,24 @@ uint8_t adxlInit(void)
 
 	adxlReadTS(ADXL_RANGE , &set , 1);
 	set = RANGE_2G;
- 	adxlWriteTS(ADXL_RANGE , set );									//SET RANGE = 4g
+ 	adxlWriteTS(ADXL_RANGE , set );									//SET RANGE = 2g
 	
 	adxlReadTS(ADXL_ODR_LPF , &set , 1);
-	set = 0x06;
- 	adxlWriteTS(ADXL_ODR_LPF , set);								//SET ODR To 62.5
+	set = 0x04;
+ 	adxlWriteTS(ADXL_ODR_LPF , set);								//SET ODR To 62.5 and 15 Hz low pass filter
+
+	//Set Fifo Full interrupt enable on INT2 PIN
+	//adxlWriteTS(ADXL_INT_MAP, FIFO_FULL_ON_INT2);
+	
+	//Set Fifo Full on 90 
+	adxlWriteTS(ADXL_FIFO_SIZE, FIFO_FULL_96_SIZE);
+	
+	//Set Windows pointers
+	acc_adxl.Win1WritePtr = 0;
+	acc_adxl.Win2WritePtr = 256;
 	
 	return ret_value;
 }
-
-
 
 /**
   * @brief  Read bmi160 accelerometer values
@@ -135,7 +151,7 @@ uint8_t adxlInit(void)
   */
 void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
 {
-	char print_acc[200];
+	char print_acc[50];
 	
 	//Variables for data conversion
 	uint32_t accX, accY, accZ;
@@ -160,10 +176,105 @@ void adxlReadAcc(int32_t *acc_x , int32_t *acc_y , int32_t *acc_z)
 
   acc_adxl.acc_g[0] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
 	
+	//Service Log
 	sprintf(print_acc, "X: %.3f) Y: %.3f Z: %.3f G: %.3f\r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z, acc_adxl.acc_g[0]);
+	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+}
+
+/**
+  * @brief  Adxl data procesing
+  */
+void adxlDataProces(void){
+
+	char print_acc[50];
+	
+	//Variables for data conversion
+	uint32_t accX, accY, accZ;
+	
+	//Data stored in fifo
+	uint8_t StoredDataFifo = 0x00;
+	//FifoPtr
+	uint16_t fifoXPtr = 0;
+	
+	//Check data stored to read
+	adxlReadTS(ADXL_FIFO_ENTRIES, &StoredDataFifo, 1);
+	
+	//Read data from Fifo
+	adxlReadTS(ADXL_FIFO_DATA, (uint8_t *) acc_adxl.acc_buf, StoredDataFifo);
+	
+	//Check where X data is
+	if((acc_adxl.acc_buf[2] & 0x01) == 0x01) fifoXPtr = 0; 
+	else if((acc_adxl.acc_buf[5] & 0x01) == 0x01) fifoXPtr = 3;
+	else fifoXPtr = 6;
+	
+	float test1, test2;
+	
+	//Konwersja danych
+	while((fifoXPtr/9) < StoredDataFifo){
+	
+		accX = ((acc_adxl.acc_buf[fifoXPtr] << 12) | (acc_adxl.acc_buf[fifoXPtr+1] << 4) | (acc_adxl.acc_buf[fifoXPtr+2] >> 4 ));
+		if(accX > 0x0007FFFF) accX |= 0xFFF00000;
+		acc_adxl.Win1_axisX[acc_adxl.Win1WritePtr] = (int32_t)accX;
+		acc_adxl.Win2_axisX[acc_adxl.Win2WritePtr] = (int32_t)accX;
 		
+		accY = ((acc_adxl.acc_buf[fifoXPtr+3] << 12) | (acc_adxl.acc_buf[fifoXPtr+4] << 4) | (acc_adxl.acc_buf[fifoXPtr+5] >> 4));
+		if(accY > 0x0007FFFF) accY |= 0xFFF00000;
+		acc_adxl.Win1_axisY[acc_adxl.Win1WritePtr] = (int32_t)accY;
+		acc_adxl.Win2_axisY[acc_adxl.Win2WritePtr] = (int32_t)accY;
+		
+		accZ = ((acc_adxl.acc_buf[fifoXPtr+6] << 12) | (acc_adxl.acc_buf[fifoXPtr+7] << 4) | (acc_adxl.acc_buf[fifoXPtr+8] >> 4 ));
+		if(accZ > 0x0007FFFF) accZ |= 0xFFF00000;
+		acc_adxl.Win1_axisZ[acc_adxl.Win1WritePtr] = (int32_t)accZ;
+		acc_adxl.Win2_axisZ[acc_adxl.Win2WritePtr] = (int32_t)accZ;
+		
+		//Get Acceleration values on each axis
+		acc_adxl.X = (acc_adxl.Win1_axisX[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;												
+		acc_adxl.Y = (acc_adxl.Win1_axisY[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;
+		acc_adxl.Z = (acc_adxl.Win1_axisZ[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;
+		
+		test1 = acc_adxl.X;
+		
+		//Get Acceleration Values
+		acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
+		acc_adxl.Win2_Acc[acc_adxl.Win2WritePtr] = acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr];
+	
+		test2 = acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr];
+	
+		sprintf(print_acc, "$$$ X %.2f, Y %.2f, Z %.2f \r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
+		ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+	
+		//Pointers increment
+		fifoXPtr += 9;
+		acc_adxl.Win1WritePtr++;
+		acc_adxl.Win2WritePtr++;
+		
+		//Check pointers
+		if(acc_adxl.Win1WritePtr == 512) {
+			acc_adxl.Win1WritePtr = 0; 
+			winAnalyze(1);
+		}
+			if(acc_adxl.Win2WritePtr == 512) acc_adxl.Win2WritePtr = 0;	
+	}
+	
+	sprintf(print_acc, "$$$ ======================\r\n");
 	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 
+}
+/**
+  * @brief  Window Analyze
+  */
+void winAnalyze(uint8_t winNr){
+	
+		//Print buf
+		char print_acc[50];
+		
+		uint16_t cnt;
+	
+		for(cnt = 0; cnt < 512; cnt++){
+			//service Log
+			sprintf(print_acc, "$$ %.2f, Win1 Acc %.2f \r\n", acc_adxl.Win1_Acc[cnt], acc_adxl.Win1_Acc[cnt]);
+			ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+		}
 }
 
 /**

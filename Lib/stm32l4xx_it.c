@@ -62,6 +62,7 @@ extern UartDriver* BL652Uart;
 // Global IRQ flag
 volatile uint8_t irqGlobalFlag;
 
+
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -69,7 +70,20 @@ volatile uint8_t irqGlobalFlag;
 /*            Cortex-M4 Processor Exceptions Handlers                         */
 /******************************************************************************/
 
+/**
+  * @brief  This function handles EXTI2_IRQn Handler
+  * @param  None
+  * @retval None
+  */
+void EXTI2_IRQn_IRQHandler(void)
+{
+	if(__HAL_GPIO_EXTI_GET_IT(ADXL_INT2_PIN) != RESET)
+  {
+		__HAL_GPIO_EXTI_CLEAR_IT(ADXL_INT2_PIN);
+		
+	}
 
+}
 /**
   * @brief   This function handles USART3 exception.
   * @param  None

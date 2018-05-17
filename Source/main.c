@@ -11,11 +11,11 @@
 // >>>>>>>>>>>>>>>>> Variables
 //extern volatile uint8_t irqGlobalFlag;
 
+//Global ADXL read flag 
+extern volatile uint8_t adxlReadFlag;
+
 int main(void){
 
-	//ADXL read axis values
-	int32_t axis_x, axis_y, axis_z;
-	
 	// Init HAL
 	HAL_Init();
 	
@@ -25,8 +25,12 @@ int main(void){
 	while(1)
 	{
 		
-		adxlReadAcc(&axis_x, &axis_y, &axis_z);
-		HAL_Delay(200);
+		if(adxlReadFlag){
+		
+			adxlReadFlag = 0x00;
+			
+			adxlDataProces();
+		}
 
 	}
 }
