@@ -41,26 +41,30 @@
 //Settings
 typedef struct{
 		uint8_t 	acc_buf[288];				//Buf for temp Read
-		uint8_t		Win1FullFlag;				
-		uint8_t		Win2FullFlag;
+		uint8_t		win1FullFlag;				
+		uint8_t		win2FullFlag;
 		int32_t 	acc_x;
 		int32_t 	acc_y;
 		int32_t 	acc_z;
-		int32_t   Win1_axisX[512];		//Window 1 Axis X
-		int32_t		Win2_axisX[512];		//Window 2 Axis x
-		int32_t   Win1_axisY[512];		//Window 1 Axis Y
-		int32_t		Win2_axisY[512];		//Window 2 Axis Y
-		int32_t   Win1_axisZ[512];		//Window 1 Axis Z
-		int32_t		Win2_axisZ[512];		//Window 2 Axis Z
-		uint16_t	Win1WritePtr;				//Pointer to write to win1
-		uint16_t	Win2WritePtr;				//Pointer to write to win2
-		uint16_t	Win1ReadPtr;				//Pointer to read win1
-		uint16_t	Win2ReadPtr;				//Pointer to read win2
+		int32_t   win1_axisX[512];		//Window 1 Axis X
+		int32_t		win2_axisX[512];		//Window 2 Axis x
+		int32_t   win1_axisY[512];		//Window 1 Axis Y
+		int32_t		win2_axisY[512];		//Window 2 Axis Y
+		int32_t   win1_axisZ[512];		//Window 1 Axis Z
+		int32_t		win2_axisZ[512];		//Window 2 Axis Z
+		uint16_t	win1WritePtr;				//Pointer to write to win1
+		uint16_t	win2WritePtr;				//Pointer to write to win2
+		uint16_t	win1ReadPtr;				//Pointer to read win1
+		uint16_t	win2ReadPtr;				//Pointer to read win2
 		float     X;
 		float		  Y;
 	  float			Z;	
-		float			Win1_Acc[512]; 			//Accelration (accidental vector :) ) value Vin 1
-		float			Win2_Acc[512];			//Accelration (accidental vecotr :) ) value Vin 2
+		float			win1_Acc[512]; 			//Accelration (accidental vector :) ) value Vin 1
+		float 		win1_AccAvrage;
+		float 		win1_AccAvrageTemp;
+		float			win2_Acc[512];			//Accelration (accidental vecotr :) ) value Vin 2
+		float			win2_AccAvrage;
+		float			win2_AccAvrageTemp;
 		float			acc_g[40];
 } acc_axis_adxl;
 

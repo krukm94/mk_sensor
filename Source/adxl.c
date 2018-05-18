@@ -33,6 +33,12 @@ uint8_t adxlInit(void)
 	
 	char print[50];
 	
+	//Reset adxl strucute values
+	acc_adxl.win1_AccAvrage = 0.0;
+	acc_adxl.win1_AccAvrageTemp = 0.0;
+	acc_adxl.win2_AccAvrage = 0.0;
+	acc_adxl.win2_AccAvrageTemp = 0.0;
+	
 	//RCC On
 	__HAL_RCC_SPI3_CLK_ENABLE();
 	__HAL_RCC_GPIOC_CLK_ENABLE();
@@ -139,15 +145,16 @@ uint8_t adxlInit(void)
 	set = RANGE_2G;
  	adxlWriteTS(ADXL_RANGE , set );									//SET RANGE = 2g
 	
-	set = 0x06;
+	set = 0x04;
  	adxlWriteTS(ADXL_ODR_LPF , set);								//SET ODR To 62.5 and 15 Hz low pass filter
 								
 	set = 0x00;
  	adxlWriteTS(ADXL_POWER , set);									//SET MEASURMENT ON
 	
 	//Set Windows pointers
-	acc_adxl.Win1WritePtr = 0;
-	acc_adxl.Win2WritePtr = 256;
+	acc_adxl.win1WritePtr = 0;
+	acc_adxl.win2WritePtr = 256;
+
 	
 	return ret_value;
 }
@@ -214,8 +221,6 @@ void adxlDataProces(void){
 	if((acc_adxl.acc_buf[5] & 0x01) == 0x01) fifoXPtr = 3;
 	if((acc_adxl.acc_buf[8] & 0x01) == 0x01) fifoXPtr = 6;
 	
-	float test1, test2;
-	
 	//Konwersja danych
 	while((fifoXPtr) < StoredDataFifo){
 		
@@ -225,49 +230,54 @@ void adxlDataProces(void){
 	
 		accX = ((acc_adxl.acc_buf[fifoXPtr] << 12) | (acc_adxl.acc_buf[fifoXPtr+1] << 4) | (acc_adxl.acc_buf[fifoXPtr+2] >> 4 ));
 		if(accX > 0x0007FFFF) accX |= 0xFFF00000;
-		acc_adxl.Win1_axisX[acc_adxl.Win1WritePtr] = (int32_t)accX;
-		acc_adxl.Win2_axisX[acc_adxl.Win2WritePtr] = (int32_t)accX;
+		acc_adxl.win1_axisX[acc_adxl.win1WritePtr] = (int32_t)accX;
+		acc_adxl.win2_axisX[acc_adxl.win2WritePtr] = (int32_t)accX;
 		
 		accY = ((acc_adxl.acc_buf[fifoXPtr+3] << 12) | (acc_adxl.acc_buf[fifoXPtr+4] << 4) | (acc_adxl.acc_buf[fifoXPtr+5] >> 4));
 		if(accY > 0x0007FFFF) accY |= 0xFFF00000;
-		acc_adxl.Win1_axisY[acc_adxl.Win1WritePtr] = (int32_t)accY;
-		acc_adxl.Win2_axisY[acc_adxl.Win2WritePtr] = (int32_t)accY;
+		acc_adxl.win1_axisY[acc_adxl.win1WritePtr] = (int32_t)accY;
+		acc_adxl.win2_axisY[acc_adxl.win2WritePtr] = (int32_t)accY;
 		
 		accZ = ((acc_adxl.acc_buf[fifoXPtr+6] << 12) | (acc_adxl.acc_buf[fifoXPtr+7] << 4) | (acc_adxl.acc_buf[fifoXPtr+8] >> 4 ));
 		if(accZ > 0x0007FFFF) accZ |= 0xFFF00000;
-		acc_adxl.Win1_axisZ[acc_adxl.Win1WritePtr] = (int32_t)accZ;
-		acc_adxl.Win2_axisZ[acc_adxl.Win2WritePtr] = (int32_t)accZ;
+		acc_adxl.win1_axisZ[acc_adxl.win1WritePtr] = (int32_t)accZ;
+		acc_adxl.win2_axisZ[acc_adxl.win2WritePtr] = (int32_t)accZ;
 		
 		//Get Acceleration values on each axis
-		acc_adxl.X = (acc_adxl.Win1_axisX[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;												
-		acc_adxl.Y = (acc_adxl.Win1_axisY[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;
-		acc_adxl.Z = (acc_adxl.Win1_axisZ[acc_adxl.Win1WritePtr] * LSB_2g)/1000000;
-		
-		test1 = acc_adxl.X;
+		acc_adxl.X = (acc_adxl.win1_axisX[acc_adxl.win1WritePtr] * LSB_2g)/1000000;												
+		acc_adxl.Y = (acc_adxl.win1_axisY[acc_adxl.win1WritePtr] * LSB_2g)/1000000;
+		acc_adxl.Z = (acc_adxl.win1_axisZ[acc_adxl.win1WritePtr] * LSB_2g)/1000000;
 		
 		//Get Acceleration Values
-		acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
-		acc_adxl.Win2_Acc[acc_adxl.Win2WritePtr] = acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr];
-	
-		test2 = acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr];
-	
-		//sprintf(print_acc, "$$$ X %d, Y %d, Z %d \r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
-		//ServUsart->writeString(ServUsart->usartHandle ,print_acc);
-	
+		acc_adxl.win1_Acc[acc_adxl.win1WritePtr] = (float)sqrt(acc_adxl.X*acc_adxl.X + acc_adxl.Y*acc_adxl.Y + acc_adxl.Z*acc_adxl.Z);
+		acc_adxl.win2_Acc[acc_adxl.win2WritePtr] = acc_adxl.win1_Acc[acc_adxl.win1WritePtr];
+
+		//Avrage Acceleration
+		acc_adxl.win1_AccAvrageTemp += acc_adxl.win1_Acc[acc_adxl.win1WritePtr];
+		acc_adxl.win2_AccAvrageTemp += acc_adxl.win2_Acc[acc_adxl.win1WritePtr];
+
 		//Pointers increment
 		fifoXPtr += 9;
-		acc_adxl.Win1WritePtr++;
-		acc_adxl.Win2WritePtr++;
-		
-		sprintf(print_acc, "%f,%f,%f\r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
-		ServUsart->writeString(ServUsart->usartHandle ,print_acc);
-		
+		acc_adxl.win1WritePtr++;
+		acc_adxl.win2WritePtr++;
+	
 		//Check pointers
-		if(acc_adxl.Win1WritePtr == 512) {
-			acc_adxl.Win1WritePtr = 0; 
+		if(acc_adxl.win1WritePtr == 512) {
+			acc_adxl.win1WritePtr = 0; 
+			
+			acc_adxl.win1_AccAvrage = (acc_adxl.win1_AccAvrageTemp/512);
+			acc_adxl.win1_AccAvrageTemp = 0.0;
+			
+			//Analyze
 			winAnalyze(1);
 		}
-			if(acc_adxl.Win2WritePtr == 512) acc_adxl.Win2WritePtr = 0;	
+			
+		if(acc_adxl.win2WritePtr == 512){
+			acc_adxl.win2WritePtr = 0;	
+			
+			acc_adxl.win2_AccAvrage = (acc_adxl.win2_AccAvrageTemp/512);
+			acc_adxl.win2_AccAvrageTemp = 0.0;
+		}
 	}
 	
 }
@@ -280,11 +290,31 @@ void winAnalyze(uint8_t winNr){
 		
 		uint16_t cnt;
 	
-		for(cnt = 0; cnt < 512; cnt++){
-			//service Log
-//			sprintf(print_acc, "$$ %.2f, Win1 Acc %.2f \r\n", acc_adxl.Win1_Acc[cnt], acc_adxl.Win1_Acc[cnt]);
-//			ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+		//Acceleration Avrage
+		float accAvrWin1;
+		float accAvrWin2;
+	
+		switch(winNr){
+		
+			case 1:
+				for(cnt = 0; cnt < 512; cnt++){
+					
+					sprintf(print_acc, "%f\r\n", acc_adxl.win1_Acc[cnt]);
+					ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+				}
+				
+				sprintf(print_acc, "$$$%f||%f\r\n", acc_adxl.win1_AccAvrage, acc_adxl.win2_AccAvrage);
+				ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+				
+			break;
+			
+			case 2:
+				
+			break;
+			
+			default: break;
 		}
+
 }
 
 /**
