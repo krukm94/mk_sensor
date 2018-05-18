@@ -64,7 +64,7 @@ uint8_t adxlInit(void)
 	gpio.Speed			= GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(ADXL_CS_PORT , &gpio);
 	
-	//INT2 PIN
+//	//INT2 PIN
 //	gpio.Pin = ADXL_INT2_PIN;
 //	gpio.Mode = GPIO_MODE_IT_RISING;
 //	gpio.Pull = GPIO_PULLUP;
@@ -119,24 +119,31 @@ uint8_t adxlInit(void)
 		sprintf(print , "$$$ ADXL CHIP ID: 0x%0.2X\n\r" , read);
 		ServUsart->writeString(ServUsart->usartHandle ,print);
 	}
+	adxlReadTS(ADXL_FIFO_ENTRIES, &read, 1);
+	sprintf(print , "$$$ INIT FIFO SIZE: 0x%0.2X\n\r" , read);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 	
-	adxlReadTS(ADXL_POWER , &set , 1);									
-	set = 0x00;
- 	adxlWriteTS(ADXL_POWER , set);									//SET MEASURMENT ON
+	adxlReadTS(ADXL_FIFO_DATA, (uint8_t *) acc_adxl.acc_buf, read*3);
+	
+	adxlReadTS(ADXL_FIFO_ENTRIES, &read, 1);
+	sprintf(print , "$$$ INIT FIFO SIZE AFTER READ: 0x%0.2X\n\r" , read);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
+	
+	//Set Fifo Full on 90 
+	adxlWriteTS(ADXL_FIFO_SIZE, 0x5A);
+	adxlReadTS(ADXL_FIFO_SIZE, &read, 1);
+	
+	sprintf(print , "$$$ ADXL_FIFO_SIZE= 0x%0.2X\n\r" , read);
+	ServUsart->writeString(ServUsart->usartHandle ,print);
 
-	adxlReadTS(ADXL_RANGE , &set , 1);
 	set = RANGE_2G;
  	adxlWriteTS(ADXL_RANGE , set );									//SET RANGE = 2g
 	
-	adxlReadTS(ADXL_ODR_LPF , &set , 1);
-	set = 0x04;
+	set = 0x06;
  	adxlWriteTS(ADXL_ODR_LPF , set);								//SET ODR To 62.5 and 15 Hz low pass filter
-
-	//Set Fifo Full interrupt enable on INT2 PIN
-	//adxlWriteTS(ADXL_INT_MAP, FIFO_FULL_ON_INT2);
-	
-	//Set Fifo Full on 90 
-	adxlWriteTS(ADXL_FIFO_SIZE, FIFO_FULL_96_SIZE);
+								
+	set = 0x00;
+ 	adxlWriteTS(ADXL_POWER , set);									//SET MEASURMENT ON
 	
 	//Set Windows pointers
 	acc_adxl.Win1WritePtr = 0;
@@ -200,17 +207,21 @@ void adxlDataProces(void){
 	adxlReadTS(ADXL_FIFO_ENTRIES, &StoredDataFifo, 1);
 	
 	//Read data from Fifo
-	adxlReadTS(ADXL_FIFO_DATA, (uint8_t *) acc_adxl.acc_buf, StoredDataFifo);
+	adxlReadTS(ADXL_FIFO_DATA, (uint8_t *) acc_adxl.acc_buf, (StoredDataFifo*3));
 	
 	//Check where X data is
 	if((acc_adxl.acc_buf[2] & 0x01) == 0x01) fifoXPtr = 0; 
-	else if((acc_adxl.acc_buf[5] & 0x01) == 0x01) fifoXPtr = 3;
-	else fifoXPtr = 6;
+	if((acc_adxl.acc_buf[5] & 0x01) == 0x01) fifoXPtr = 3;
+	if((acc_adxl.acc_buf[8] & 0x01) == 0x01) fifoXPtr = 6;
 	
 	float test1, test2;
 	
 	//Konwersja danych
-	while((fifoXPtr/9) < StoredDataFifo){
+	while((fifoXPtr) < StoredDataFifo){
+		
+		//Check where X data is
+		if((acc_adxl.acc_buf[fifoXPtr + 5] & 0x01) == 0x01) fifoXPtr += 3;
+		if((acc_adxl.acc_buf[fifoXPtr + 8] & 0x01) == 0x01) fifoXPtr += 6;
 	
 		accX = ((acc_adxl.acc_buf[fifoXPtr] << 12) | (acc_adxl.acc_buf[fifoXPtr+1] << 4) | (acc_adxl.acc_buf[fifoXPtr+2] >> 4 ));
 		if(accX > 0x0007FFFF) accX |= 0xFFF00000;
@@ -240,13 +251,16 @@ void adxlDataProces(void){
 	
 		test2 = acc_adxl.Win1_Acc[acc_adxl.Win1WritePtr];
 	
-		sprintf(print_acc, "$$$ X %.2f, Y %.2f, Z %.2f \r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
-		ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+		//sprintf(print_acc, "$$$ X %d, Y %d, Z %d \r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
+		//ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 	
 		//Pointers increment
 		fifoXPtr += 9;
 		acc_adxl.Win1WritePtr++;
 		acc_adxl.Win2WritePtr++;
+		
+		sprintf(print_acc, "%f,%f,%f\r\n", acc_adxl.X, acc_adxl.Y, acc_adxl.Z);
+		ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 		
 		//Check pointers
 		if(acc_adxl.Win1WritePtr == 512) {
@@ -256,15 +270,11 @@ void adxlDataProces(void){
 			if(acc_adxl.Win2WritePtr == 512) acc_adxl.Win2WritePtr = 0;	
 	}
 	
-	sprintf(print_acc, "$$$ ======================\r\n");
-	ServUsart->writeString(ServUsart->usartHandle ,print_acc);
-
 }
 /**
   * @brief  Window Analyze
   */
 void winAnalyze(uint8_t winNr){
-	
 		//Print buf
 		char print_acc[50];
 		
@@ -272,8 +282,8 @@ void winAnalyze(uint8_t winNr){
 	
 		for(cnt = 0; cnt < 512; cnt++){
 			//service Log
-			sprintf(print_acc, "$$ %.2f, Win1 Acc %.2f \r\n", acc_adxl.Win1_Acc[cnt], acc_adxl.Win1_Acc[cnt]);
-			ServUsart->writeString(ServUsart->usartHandle ,print_acc);
+//			sprintf(print_acc, "$$ %.2f, Win1 Acc %.2f \r\n", acc_adxl.Win1_Acc[cnt], acc_adxl.Win1_Acc[cnt]);
+//			ServUsart->writeString(ServUsart->usartHandle ,print_acc);
 		}
 }
 

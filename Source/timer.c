@@ -4,6 +4,7 @@
 
 #include "timer.h"
 
+TIM_HandleTypeDef			tim6;
 TIM_HandleTypeDef			tim3;
 TIM_HandleTypeDef			tim2;
 
@@ -24,12 +25,12 @@ void init_timers(void)
 {
 	tim_2_init();	
 	tim_3_init();
+	tim_6_init();
 	
-	HAL_Delay(10);
 }
 
 /**
-  * @brief  Timer 2 Init function
+  * @brief  Timer 2 Init function  Timer for time measurment
 */
 void tim_2_init(void)
 {
@@ -64,8 +65,6 @@ void TIM2_IRQHandler(void)
 		__HAL_TIM_CLEAR_FLAG(&tim2, TIM_SR_UIF);	
 	
 		tim2_updates++;
-		
-		adxlReadFlag = 0x01;
 	}
 }
 
@@ -109,7 +108,7 @@ float get_tim_meas(uint8_t display_result)
 	if(display_result)
 	{
 		char tim_measurment_buf[40];
-		sprintf(tim_measurment_buf , "\r\n\r\n$$$ Time measurment result: %f [ns] CNT: %d " , time_meas , tim2_cnt);
+		sprintf(tim_measurment_buf , "$$$ Time measurment result: %f [ns] CNT: %d \r\n\r\n" , time_meas , tim2_cnt);
 		ServUsart->writeString(ServUsart->usartHandle , tim_measurment_buf);
 	}
 	
@@ -117,7 +116,7 @@ float get_tim_meas(uint8_t display_result)
 }
 
 /**
-  * @brief  Timer 3 Init function
+  * @brief  Timer 3 Init function  Timer for us_delay
 */
 void tim_3_init(void)
 {
@@ -168,3 +167,43 @@ void delay_us_mk(uint32_t delay_us){
 	while(delay_cnt < delay_us);
 
 }
+
+/**
+  * @brief  Timer 6 Init function  Timer of ADXL sample
+*/
+void tim_6_init(void)
+{
+	__HAL_RCC_TIM6_CLK_ENABLE();
+	
+	tim6.Instance = TIM6;
+	tim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+	tim6.Init.Prescaler = 1000 - 1;
+	tim6.Init.Period = 	 16000 - 1;									//Przerwania co 200 ms
+	
+	HAL_NVIC_SetPriority(TIM6_DAC_IRQn, TIM6_NVIC_PRIORITY, 0);
+	HAL_NVIC_EnableIRQ(TIM6_DAC_IRQn);
+	
+	if(HAL_TIM_Base_Init(&tim6) != HAL_OK){
+		_Error_Handler(__FILE__, __LINE__);
+	}
+	
+	__HAL_TIM_ENABLE(&tim6);
+	
+	__HAL_TIM_ENABLE_IT(&tim6, TIM_IT_UPDATE);
+	
+	ServUsart->writeString(ServUsart->usartHandle , "$$$ TIM6 INIT OK \r\n");
+}
+
+/**
+  * @brief  TIM3 Interrupt function
+*/
+void TIM6_DAC_IRQHandler(void)
+{	
+	if(__HAL_TIM_GET_FLAG(&tim6, TIM_SR_UIF))
+	{
+		__HAL_TIM_CLEAR_FLAG(&tim6, TIM_SR_UIF);	
+		
+		adxlReadFlag = 0x01;
+	}
+}
+

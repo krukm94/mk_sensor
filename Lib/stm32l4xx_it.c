@@ -62,7 +62,7 @@ extern UartDriver* BL652Uart;
 // Global IRQ flag
 volatile uint8_t irqGlobalFlag;
 
-
+extern volatile uint8_t adxlReadFlag;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -77,10 +77,11 @@ volatile uint8_t irqGlobalFlag;
   */
 void EXTI2_IRQn_IRQHandler(void)
 {
-	if(__HAL_GPIO_EXTI_GET_IT(ADXL_INT2_PIN) != RESET)
+	if(__HAL_GPIO_EXTI_GET_IT(EXTI2_IRQn) != RESET)
   {
-		__HAL_GPIO_EXTI_CLEAR_IT(ADXL_INT2_PIN);
+		__HAL_GPIO_EXTI_CLEAR_IT(EXTI2_IRQn);
 		
+		//adxlReadFlag = 0x01;
 	}
 
 }

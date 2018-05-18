@@ -17,6 +17,7 @@ void init_timers(void);
 
 void tim_2_init(void);
 void tim_3_init(void);
+void tim_6_init(void);
 
 void start_tim_meas(void);
 float get_tim_meas(uint8_t display_result);

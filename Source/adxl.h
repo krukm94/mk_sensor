@@ -32,7 +32,7 @@
 #define RANGE_2G						((uint8_t)0x01)
 
 #define FIFO_FULL_ON_INT2		((uint8_t)0x20)
-#define FIFO_FULL_96_SIZE		((uint8_t)0x60)
+#define FIFO_FULL_90_SIZE		((uint8_t)0x5A)
 
 #define LSB_8g 							15.258789				//15.25878906 ug
 #define LSB_4g							7.629394531				//7.629394531 ug
